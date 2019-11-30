@@ -354,6 +354,7 @@ def read_file(path):
 def read_binary_file(path):
     #todo: this
     a = 2
+    b = 1
     pass
 
                                             
