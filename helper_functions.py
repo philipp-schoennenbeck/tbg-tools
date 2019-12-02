@@ -1,6 +1,7 @@
 import numpy as np
 import re
 import struct
+import binascii
 bases = ["A", "C", "G", "U"]
 aa_codes = {
 "AAA":["Lys","K"],
@@ -271,7 +272,7 @@ def get_current_triplett(sequence, position, forward=True):
     return triplett, triplett_position
 
 
-def format_string(length_of_string):
+def format_string(length_of_string=0):
     return "IIccccI?cccc"
 
     # fmt = ["c" * length_of_string[0]]
@@ -281,6 +282,12 @@ def format_string(length_of_string):
 
     return "".join(fmt)
 
+def byte_size_of_fmt(fmt):
+    sizes = {"I" : 4, "c" : 1, "?" : 1}
+    size = 0
+    for i in fmt:
+        size += sizes[i]
+    return size
 
 def write_binary(data, path):
     """binary file:
@@ -324,13 +331,15 @@ def write_binary(data, path):
             data_split = line.strip().split("\t")
             for i in [5, 8, 9, 10, 11]:
                 if data_split[i] == "stop":
-                    data_split[i] = "O"
-            # length_of_string = [len(data_split[i]) for i in [0, 6]]
+                    data_split[i] = "-"
             data_split[0] = scaffolds[data_split[0]]
             data_split[1] = int(data_split[1])
             # data_split[4] = int(data_split[4])
             data_split[6] = genes[data_split[6]]
-            data_split[7] = bool(data_split[7])
+            if data_split[7] == "True":
+                data_split[7] = True
+            elif data_split[7] == "False":
+                data_split[7] = False
             single_char_list = []
             for i in data_split:
                 if type(i) == str:
@@ -346,17 +355,64 @@ def write_binary(data, path):
 
 
 def read_file(path):
+    data = {}
     with open(path, "r") as f:
         for line in f:
             line_split = line.strip().split("\t")
+            line_split[1] = int(line_split[1])
+            if line_split[7] == "False":
+                line_split[7] = False
+            elif line_split[7] == "True":
+                line_split[7] = True
+            if line_split[0] in data:
+                data[line_split[0]][line_split[1]] = line_split[2:]
+            else:
+                data[line_split[0]] = {}
+                data[line_split[0]][line_split[1]] = line_split[2:]
+    f.close()
+    return data
             #todo: read file, figure out what to search
             
 def read_binary_file(path):
-    #todo: this
-    a = 2
-    b = 1
-    pass
+    data = {}
+    with open(path, "rb") as f:
+        genes = {}
+        number_of_genes = struct.unpack("I", f.read(4))[0]
+        genes_str_length = struct.unpack("I" * number_of_genes, f.read(4 * number_of_genes))
+        for i in range(number_of_genes):
+            scaffold_name = struct.unpack("c" * genes_str_length[i], f.read(genes_str_length[i]))
+            scaffold_name = "".join([str(letter, "utf-8") for letter in scaffold_name])
+            genes[i] = scaffold_name
+        scaffolds = {}
+        number_of_scaffolds = struct.unpack("I", f.read(4))[0]
+        scaffolds_str_length = struct.unpack("I" * number_of_scaffolds, f.read(4 * number_of_scaffolds))
+        for i in range(number_of_scaffolds):
+            scaffold_name = struct.unpack("c" * scaffolds_str_length[i], f.read(scaffolds_str_length[i]))
+            scaffold_name = "".join([str(letter, "utf-8") for letter in scaffold_name])
+            scaffolds[i] = scaffold_name
+        while True:
+            bytes_line = f.read(byte_size_of_fmt(format_string()))
+            if not bytes_line:
+                # EOF
+                break
+            line = struct.unpack(format_string(), bytes_line)
+            line_translated = [scaffolds[line[0]], line[1], str(line[2], "utf-8"), str(line[3], "utf-8"),
+                               str(line[4], "utf-8"), str(line[5], "utf-8"), genes[line[6]], line[7],
+                               str(line[8], "utf-8"), str(line[9], "utf-8"), str(line[10], "utf-8"),
+                               str(line[11], "utf-8")]
+            for i in [5, 8, 9, 10, 11]:
+                if line_translated[i] == "-":
+                    line_translated[i] = "stop"
 
-                                            
+            if line_translated[0] in data:
+                data[line_translated[0]][line_translated[1]] = line_translated[2:]
+            else:
+                data[line_translated[0]] = {}
+                data[line_translated[0]][line_translated[1]] = line_translated[2:]
+
+            # print(line_translated)
+    return data
+
+
 if __name__ == "__main__":
     pass
