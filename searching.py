@@ -1,5 +1,5 @@
 from helper_functions import *
-import datetime
+from datetime import datetime
 
 def load_file(path, binary=False):
     if not binary:
