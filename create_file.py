@@ -24,11 +24,11 @@ def create_the_file(gff_file, fasta_file, outfile, verbose=False, create_binary=
 
     for i in range(10):
         timestamps.append(0)
-
-    for gene in gene_sequences.keys():
-        print(gene)
-        print(rna_to_protein(gene_sequences[gene]))
-
+    #
+    # for gene in gene_sequences.keys():
+    #     print(gene)
+    #     print(rna_to_protein(gene_sequences[gene]))
+    #
 
     if verbose:
         print("Starting to calculate the nucleotides!")
@@ -68,7 +68,7 @@ def create_the_file(gff_file, fasta_file, outfile, verbose=False, create_binary=
             four_ds = all([i == amino_acids[0] for i in amino_acids])
             A, C, G, T = amino_acids
             outlist.append("\t".join((str(i) for i in [scaff_id, position, base, base_in_gene,
-                                                       position_in_triplett, amino_acid, gene_id,
+                                                       position_in_triplett +1 , amino_acid, gene_id,
                                                        four_ds, A, C, G, T, "\n"])))
     if write_tsv:
         with open(outfile + ".tsv", "w") as outf:
@@ -88,29 +88,16 @@ def create_the_file(gff_file, fasta_file, outfile, verbose=False, create_binary=
     print(timestamps)
 
 
-def load_file(path, binary=False):
-    if not binary:
-        data = read_file(path)
-    if binary:
-        data = read_binary_file(path)
-    return data
+
 
 if __name__ == "__main__":
 
 
-    # gff_file = "E_coli.gff"
-    # fasta_file = "E_coli.fna"
-    # outfile = "E_coli"
-    gff_file = "radix.gff"
-    fasta_file = "radix.fa"
-    outfile = "radix"
+    gff_file = "E_coli.gff"
+    fasta_file = "E_coli.fna"
+    outfile = "E_coli"
+    # gff_file = "radix.gff"
+    # fasta_file = "radix.fa"
+    # outfile = "radix"
 
-    #create_the_file(gff_file, fasta_file, outfile, verbose=True, create_binary=False, write_tsv=False)
-    time = datetime.now()
-    radix_data = load_file(f"{outfile}.tsv", binary=False)
-    print((datetime.now()-time).total_seconds())
-    print(radix_data)
-    time = datetime.now()
-    radix_data = load_file(f"binary_{outfile}.bin", binary=True)
-    print((datetime.now() - time).total_seconds())
-    print(radix_data)
+    create_the_file(gff_file, fasta_file, outfile, verbose=True, create_binary=False, write_tsv=True)

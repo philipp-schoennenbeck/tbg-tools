@@ -1,4 +1,3 @@
-import numpy as np
 import re
 import struct
 import binascii
@@ -391,26 +390,40 @@ def read_binary_file(path):
             scaffold_name = "".join([str(letter, "utf-8") for letter in scaffold_name])
             scaffolds[i] = scaffold_name
         while True:
-            bytes_line = f.read(byte_size_of_fmt(format_string()))
-            if not bytes_line:
+            scaffold_and_position = f.read(8)
+            rest = f.read(byte_size_of_fmt(format_string()) - 8)
+            if not scaffold_and_position or not rest:
                 # EOF
                 break
-            line = struct.unpack(format_string(), bytes_line)
-            line_translated = [scaffolds[line[0]], line[1], str(line[2], "utf-8"), str(line[3], "utf-8"),
-                               str(line[4], "utf-8"), str(line[5], "utf-8"), genes[line[6]], line[7],
-                               str(line[8], "utf-8"), str(line[9], "utf-8"), str(line[10], "utf-8"),
-                               str(line[11], "utf-8")]
-            for i in [5, 8, 9, 10, 11]:
-                if line_translated[i] == "-":
-                    line_translated[i] = "stop"
-
-            if line_translated[0] in data:
-                data[line_translated[0]][line_translated[1]] = line_translated[2:]
+            scaffold_and_position =struct.unpack("II", scaffold_and_position)
+            if scaffold_and_position[0] in data:
+                data[scaffold_and_position[0]][scaffold_and_position[1]] = rest
             else:
-                data[line_translated[0]] = {}
-                data[line_translated[0]][line_translated[1]] = line_translated[2:]
+                data[scaffold_and_position[0]] = {}
+                data[scaffold_and_position[0]][scaffold_and_position[1]] = rest
 
             # print(line_translated)
+        # while True:
+        #     bytes_line = f.read(byte_size_of_fmt(format_string()))
+        #     if not bytes_line:
+        #         # EOF
+        #         break
+        #     line = struct.unpack(format_string(), bytes_line)
+        #     line_translated = [scaffolds[line[0]], line[1], str(line[2], "utf-8"), str(line[3], "utf-8"),
+        #                        str(line[4], "utf-8"), str(line[5], "utf-8"), genes[line[6]], line[7],
+        #                        str(line[8], "utf-8"), str(line[9], "utf-8"), str(line[10], "utf-8"),
+        #                        str(line[11], "utf-8")]
+        #     for i in [5, 8, 9, 10, 11]:
+        #         if line_translated[i] == "-":
+        #             line_translated[i] = "stop"
+        #
+        #     if line_translated[0] in data:
+        #         data[line_translated[0]][line_translated[1]] = line_translated[2:]
+        #     else:
+        #         data[line_translated[0]] = {}
+        #         data[line_translated[0]][line_translated[1]] = line_translated[2:]
+        #
+        #     # print(line_translated)
     return data
 
 
