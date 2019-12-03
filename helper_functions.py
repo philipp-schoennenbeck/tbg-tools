@@ -69,15 +69,34 @@ aa_codes = {
 "UUU":["Phe","F"]
 }
 
+
+def load_aa_codes(code="default"):
+    aa_code = {}
+    with open("aa_codes.txt", "r") as f:
+        found_code = False
+        for line in f:
+            line = line.strip()
+            if found_code:
+                if line[0] == "q":
+                    f.close()
+                    return aa_code
+                line = line.split(";")
+                aa_code[line[0]] = [line[1], line[2]]
+            elif line == f"@{code}":
+                found_code = True
+    f.close()
+    return aa_code
+
+
 def get_code(code, aa_codes, three_letter_code = False):
-    """Returns the amino acid code out of a string with 3 characters. 
+    """Returns the amino acid code out of a string with 3 characters.
     By default the one letter code is returned. If three_letter_code is True, the three letter code will be returned"""
     code = code.upper()
     try:
         if three_letter_code:
             return aa_codes[code][0]
         return aa_codes[code][1]
-    except:
+    except Exception:
         raise Exception(f"\"{code}\" has no corresponding amino acid")
 
 
@@ -90,8 +109,9 @@ def get_all_aa(code, position, three_letter_code=False):
             triplet[position] = base
             amino_acids.append(get_code("".join(triplet), three_letter_code))
         return amino_acids
-    except:
-        raise Exception(f"Cannot find all possible outcomes when changing one base. (Base: {code}, position: {position})")
+    except Exception:
+        raise Exception(f"Cannot find all possible outcomes when changing one base. (Base: {code},"
+                        f" position: {position})")
 
 
 def get_other_strand(strand):
@@ -105,7 +125,8 @@ def load_gff(path, types=None, verbose=False):
     """"Loads a gff file and searches for all types of the given type.
      Returns a list of all the entries with that type."""
     with open(path, "r") as f:
-        if verbose: print("Starting to load gff!")
+        if verbose:
+            print("Starting to load gff!")
         # try:
         #     gff_data = np.asarray(f)
         #     if type == None:
@@ -116,7 +137,7 @@ def load_gff(path, types=None, verbose=False):
         # except:
 
         if types is not None:
-            gff_data = {i : [] for i in types}
+            gff_data = {i: [] for i in types}
         else:
             gff_data = {"all": []}
         for line in f:
@@ -125,7 +146,7 @@ def load_gff(path, types=None, verbose=False):
             line_split = line.split("\t")
             if types is None:
                 if len(line_split) >= 3:
-                  gff_data["all"].append(line)
+                    gff_data["all"].append(line)
             else:
                 if len(line_split) >= 3:
                     for i in types:
@@ -137,7 +158,8 @@ def load_gff(path, types=None, verbose=False):
 
 def load_fasta(path, seperator=None, verbose=False):
     """Loads a fasta file. Returns a dictionary with the scaffold names as the key and the sequence as the value."""
-    if verbose: print("Starting to load fasta!")
+    if verbose:
+        print("Starting to load fasta!")
     try:
         with open(path, "r") as f:
             scaffolds = {}
