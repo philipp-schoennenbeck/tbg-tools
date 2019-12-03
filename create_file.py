@@ -2,11 +2,12 @@ from helper_functions import *
 from datetime import datetime
 
 
-def create_the_file(gff_file, fasta_file, outfile, verbose=False, create_binary=False, write_tsv=True):
+def create_the_file(gff_file, fasta_file, outfile, verbose=False, create_binary=False, write_tsv=True,
+                    aa_code="default"):
     starting_time = datetime.now()
     timestamps = [0]
     outlist = []
-
+    aa_codes =
     time = datetime.now()
     gff_data = get_genes_and_cds(gff_file, verbose=verbose)
     timestamps.append((datetime.now() - time).total_seconds())

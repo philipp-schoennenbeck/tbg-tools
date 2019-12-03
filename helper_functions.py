@@ -69,7 +69,7 @@ aa_codes = {
 "UUU":["Phe","F"]
 }
 
-def get_code(code, three_letter_code = False):
+def get_code(code, aa_codes, three_letter_code = False):
     """Returns the amino acid code out of a string with 3 characters. 
     By default the one letter code is returned. If three_letter_code is True, the three letter code will be returned"""
     code = code.upper()
@@ -186,7 +186,7 @@ def coding_strand_to_rna(strand):
     return strand
 
 
-def rna_to_protein(rna):
+def rna_to_protein(rna, aa_codes):
     """translates the rna sequence to the amino acid sequence"""
     rna = rna.upper()
     protein = []
