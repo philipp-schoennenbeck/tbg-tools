@@ -1,13 +1,81 @@
 from helper_functions import *
 from datetime import datetime
+from time import sleep
+
+def write_binary(data, path):
+    """binary file:
+    int i(how many scaffolds are there),
+    i ints (how long are the strings of the scaffolds),
+    characters for the scaffolds
+    same thing for genes
+    after that: format string: IIccccI?cccc
+    --> scaffold number, position, base on ref, base in gene, position in triplet, amino acid, gene number,
+        4ds, to A, to C, to G, to T"""
+
+    genes = {}
+    genes_list = []
+    scaffolds = {}
+    scaffolds_list = []
+    scaffolds_counter = 0
+    genes_counter = 0
+    for line in data:
+        line = line.strip()
+        data_split = line.strip().split("\t")
+        if data_split[0] not in scaffolds:
+            scaffolds[data_split[0]] = scaffolds_counter
+            scaffolds_counter += 1
+            scaffolds_list.append(data_split[0])
+        if data_split[6] not in genes:
+            genes[data_split[6]] = genes_counter
+            genes_counter += 1
+            genes_list.append(data_split[6])
+
+    with open(path, "wb") as f:
+        f.write(struct.pack("I", len(genes)))
+        f.write(struct.pack("I" * len(genes), *[len(i) for i in genes_list]))
+        for gene in genes_list:
+            f.write(struct.pack("c" * len(gene), *[bytes(i, "utf-8") for i in gene]))
+
+        f.write(struct.pack("I", len(scaffolds)))
+        f.write(struct.pack("I" * len(scaffolds), *[len(i) for i in scaffolds_list]))
+        for scaffold in scaffolds_list:
+            f.write(struct.pack("c" * len(scaffold), *[bytes(i, "utf-8") for i in scaffold]))
+        for line in data:
+            data_split = line.strip().split("\t")
+            for i in [5, 8, 9, 10, 11]:
+                if data_split[i] == "stop":
+                    data_split[i] = "-"
+            data_split[0] = scaffolds[data_split[0]]
+            data_split[1] = int(data_split[1])
+            # data_split[4] = int(data_split[4])
+            data_split[6] = genes[data_split[6]]
+            if data_split[7] == "True":
+                data_split[7] = True
+            elif data_split[7] == "False":
+                data_split[7] = False
+            single_char_list = []
+            for i in data_split:
+                if type(i) == str:
+                    a = [bytes(b, "utf-8") for b in i]
+                    single_char_list.extend(a)
+
+                else:
+                    single_char_list.append(i)
+            fmt = format_string()
+            try:
+                f.write(struct.pack(fmt, *single_char_list))
+            except:
+                pass
+
+    f.close()
 
 
-def create_the_file(gff_file, fasta_file, outfile, verbose=False, create_binary=False, write_tsv=True,
-                    aa_code="default"):
+def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin="defailt.bin", verbose=False,
+                    create_binary=False, write_tsv=True, aa_code="default"):
     starting_time = datetime.now()
     timestamps = [0]
     outlist = []
-    aa_codes =
+    aa_codes = load_aa_codes(aa_code)
     time = datetime.now()
     gff_data = get_genes_and_cds(gff_file, verbose=verbose)
     timestamps.append((datetime.now() - time).total_seconds())
@@ -26,10 +94,27 @@ def create_the_file(gff_file, fasta_file, outfile, verbose=False, create_binary=
     for i in range(10):
         timestamps.append(0)
     #
-    # for gene in gene_sequences.keys():
-    #     print(gene)
-    #     print(rna_to_protein(gene_sequences[gene]))
-    #
+    with open("protein_test.fa", "w") as f:
+        for gene in gene_sequences.keys():
+            if gene == "maker-scaffold1079_size269654-augustus-gene-0.59":
+                a = gene_sequences[gene]
+                b = gff_data[gene]
+                c = get_other_strand(gene_sequences[gene])
+                d = gene_sequences[gene][::-1]
+            f.write(gene + "\n")
+            if gff_data[gene][1]:
+                f.write(rna_to_protein(gene_sequences[gene], aa_codes) + "\n")
+            else:
+                f.write(rna_to_protein(get_other_strand(gene_sequences[gene]), aa_codes) + "\n")
+
+    f.close()
+
+    # with open("radix_whole.gff") as f:
+    #     a = f.read()
+    #     a = a.split("\n")
+    #     while True:
+    #         sleep(20)
+
 
     if verbose:
         print("Starting to calculate the nucleotides!")
@@ -59,11 +144,15 @@ def create_the_file(gff_file, fasta_file, outfile, verbose=False, create_binary=
                 base_in_gene = str(get_other_strand(base)).replace("U", "T")
             timestamps[6] += (datetime.now() - time).total_seconds()
             time = datetime.now()
-            amino_acid = get_code(triplett)
+            amino_acid = get_code(triplett, aa_codes)
+            if amino_acid is None:
+                amino_acid = "+"
+                # continue
+                # raise Exception(position, scaff_id, gene)
             gene_id = gene
             timestamps[7] += (datetime.now() - time).total_seconds()
             time = datetime.now()
-            amino_acids = get_all_aa(triplett, position_in_triplett)
+            amino_acids = get_all_aa(triplett, position_in_triplett, aa_codes)
             timestamps[8] += (datetime.now() - time).total_seconds()
 
             four_ds = all([i == amino_acids[0] for i in amino_acids])
@@ -72,17 +161,16 @@ def create_the_file(gff_file, fasta_file, outfile, verbose=False, create_binary=
                                                        position_in_triplett +1 , amino_acid, gene_id,
                                                        four_ds, A, C, G, T, "\n"])))
     if write_tsv:
-        with open(outfile + ".tsv", "w") as outf:
+        with open(outfile_hr, "w") as outf:
             time = datetime.now()
-            outf.write("".join(outlist))
+            for i in outlist:
+                outf.write(i)
             timestamps[9] += (datetime.now() - time).total_seconds()
         outf.close()
     if create_binary:
         time = datetime.now()
-        write_binary(outlist, "binary_" + outfile + ".bin")
+        write_binary(outlist, outfile_bin)
         timestamps[10] = (datetime.now() - time).total_seconds()
-
-
 
     timestamps[3] = (datetime.now() - time_generate).total_seconds()
     timestamps[0] = (datetime.now() - starting_time).total_seconds()
@@ -91,14 +179,16 @@ def create_the_file(gff_file, fasta_file, outfile, verbose=False, create_binary=
 
 
 
+
+
 if __name__ == "__main__":
 
 
-    gff_file = "E_coli.gff"
-    fasta_file = "E_coli.fna"
-    outfile = "E_coli"
-    # gff_file = "radix.gff"
-    # fasta_file = "radix.fa"
-    # outfile = "radix"
+    # gff_file = "E_coli.gff"
+    # fasta_file = "E_coli.fa"
+    # outfile = "E_coli"
+    gff_file = "radix_whole.gff"
+    fasta_file = "radix_whole.fa"
+    outfile = "radix_whole"
 
-    create_the_file(gff_file, fasta_file, outfile, verbose=True, create_binary=False, write_tsv=True)
+    create_the_file(gff_file, fasta_file, outfile, verbose=True, create_binary=True, write_tsv=True)

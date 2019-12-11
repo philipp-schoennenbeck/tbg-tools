@@ -1,73 +1,6 @@
-import re
 import struct
-import binascii
+
 bases = ["A", "C", "G", "U"]
-aa_codes = {
-"AAA":["Lys","K"],
-"AAC":["Asn","N"],
-"AAG":["Lys","K"],
-"AAU":["Asn","N"],
-"ACA":["Thr","T"],
-"ACC":["Thr","T"],
-"ACG":["Thr","T"],
-"ACU":["Thr","T"],
-"AGA":["Arg","R"],
-"AGC":["Ser","S"],
-"AGG":["Arg","R"],
-"AGU":["Ser","S"],
-"AUA":["Ile","I"],
-"AUC":["Ile","I"],
-"AUG":["Met","M"],
-"AUU":["Ile","I"],
-"CAA":["Gln","Q"],
-"CAC":["His","H"],
-"CAG":["Gln","Q"],
-"CAU":["His","H"],
-"CCA":["Pro","P"],
-"CCC":["Pro","P"],
-"CCG":["Pro","P"],
-"CCU":["Pro","P"],
-"CGA":["Arg","R"],
-"CGC":["Arg","R"],
-"CGG":["Arg","R"],
-"CGU":["Arg","R"],
-"CUA":["Leu","L"],
-"CUC":["Leu","L"],
-"CUG":["Leu","L"],
-"CUU":["Leu","L"],
-"GAA":["Glu","E"],
-"GAC":["Asp","D"],
-"GAG":["Glu","E"],
-"GAU":["Asp","D"],
-"GCA":["Ala","A"],
-"GCC":["Ala","A"],
-"GCG":["Ala","A"],
-"GCU":["ALa","A"],
-"GGA":["Gly","G"],
-"GGC":["Gly","G"],
-"GGG":["Gly","G"],
-"GGU":["Gly","G"],
-"GUA":["Val","V"],
-"GUC":["Val","V"],
-"GUG":["Val","V"],
-"GUU":["Val","V"],
-"UAA":["Stop","stop"],
-"UAC":["Tyr","Y"],
-"UAG":["Stop","stop"],
-"UAU":["Tyr","Y"],
-"UCA":["Ser","S"],
-"UCC":["Ser","S"],
-"UCG":["Ser","S"],
-"UCU":["Ser","S"],
-"UGA":["Stop","stop"],
-"UGC":["Cys","C"],
-"UGG":["Trp","W"],
-"UGU":["Cys","C"],
-"UUA":["Leu","L"],
-"UUC":["Phe","F"],
-"UUG":["Leu","L"],
-"UUU":["Phe","F"]
-}
 
 
 def load_aa_codes(code="default"):
@@ -77,7 +10,7 @@ def load_aa_codes(code="default"):
         for line in f:
             line = line.strip()
             if found_code:
-                if line[0] == "q":
+                if line[0] == "@":
                     f.close()
                     return aa_code
                 line = line.split(";")
@@ -97,17 +30,18 @@ def get_code(code, aa_codes, three_letter_code = False):
             return aa_codes[code][0]
         return aa_codes[code][1]
     except Exception:
+        return None
         raise Exception(f"\"{code}\" has no corresponding amino acid")
 
 
-def get_all_aa(code, position, three_letter_code=False):
+def get_all_aa(code, position, aa_codes, three_letter_code=False):
     """Returns all possible amino acids with changes at the position"""
     try:
         triplet = [code[0], code[1], code[2]]
         amino_acids = []
         for base in bases:
             triplet[position] = base
-            amino_acids.append(get_code("".join(triplet), three_letter_code))
+            amino_acids.append(get_code("".join(triplet), aa_codes, three_letter_code))
         return amino_acids
     except Exception:
         raise Exception(f"Cannot find all possible outcomes when changing one base. (Base: {code},"
@@ -142,7 +76,7 @@ def load_gff(path, types=None, verbose=False):
             gff_data = {"all": []}
         for line in f:
             if line[0] == "#":
-                next
+                continue
             line_split = line.split("\t")
             if types is None:
                 if len(line_split) >= 3:
@@ -174,7 +108,7 @@ def load_fasta(path, seperator=None, verbose=False):
                         line = line[0]
                     scaffolds[line] = []
                     current_scaffold = line
-                    if verbose: print(f"scaffold {line} loading")
+                    #if verbose: print(f"scaffold {line} loading")
                 else:
                     scaffolds[current_scaffold].append(line)
         f.close()
@@ -215,7 +149,10 @@ def rna_to_protein(rna, aa_codes):
     for position in range(0,len(rna),3):
         triplet = rna[position:position+3]
         if len(triplet) == 3:
-            protein.append(aa_codes[triplet][1])
+            try:
+                protein.append(aa_codes[triplet][1])
+            except Exception:
+                protein.append("+")
     return "".join(protein[:-1])
 
 
@@ -257,9 +194,9 @@ def get_genes_and_cds(gff_path, verbose=False):
         for i in cds_split:
             if i[0:7] == "Parent=":
                 if i[7:] in gene_and_cds:
-                    gene_and_cds[i[7:]][0].append([cds[3], cds[4]])
+                    gene_and_cds[i[7:]][0].append([int(cds[3]), int(cds[4])])
                 elif i[7:] in mrna:
-                    gene_and_cds[mrna[i[7:]]][0].append([cds[3], cds[4]])
+                    gene_and_cds[mrna[i[7:]]][0].append([int(cds[3]), int(cds[4])])
     delete_list = []
     for key in gene_and_cds.keys():
         if gene_and_cds[key][0] == []:
@@ -293,86 +230,16 @@ def get_current_triplett(sequence, position, forward=True):
     return triplett, triplett_position
 
 
-def format_string(length_of_string=0):
+def format_string():
     return "IIccccI?cccc"
 
-    # fmt = ["c" * length_of_string[0]]
-    # fmt.append("IccIc")
-    # fmt.append("c" * length_of_string[1])
-    # fmt.append("?cccc")
-
-    return "".join(fmt)
 
 def byte_size_of_fmt(fmt):
-    sizes = {"I" : 4, "c" : 1, "?" : 1}
+    sizes = {"I": 4, "c": 1, "?": 1}
     size = 0
     for i in fmt:
         size += sizes[i]
     return size
-
-def write_binary(data, path):
-    """binary file:
-    int i(how many scaffolds are there),
-    i ints (how long are the strings of the scaffolds),
-    characters for the scaffolds
-    same thing for genes
-    after that: format string: IIccccI?cccc
-    --> scaffold number, position, base on ref, base in gene, position in triplet, amino acid, gene number,
-        4ds, to A, to C, to G, to T"""
-    
-    
-    genes = {}
-    genes_list = []
-    scaffolds = {}
-    scaffolds_list = []
-    scaffolds_counter = 0
-    genes_counter = 0
-    for line in data:
-        data_split = line.strip().split("\t")
-        if data_split[0] not in scaffolds:
-            scaffolds[data_split[0]] = scaffolds_counter
-            scaffolds_counter += 1
-            scaffolds_list.append(data_split[0])
-        if data_split[6] not in genes:
-            genes[data_split[6]] = genes_counter
-            genes_counter += 1
-            genes_list.append(data_split[6])
-
-    with open(path, "wb") as f:
-        f.write(struct.pack("I", len(genes)))
-        f.write(struct.pack("I"*len(genes), *[len(i) for i in genes_list]))
-        for gene in genes_list:
-            f.write(struct.pack("c" * len(gene), *[bytes(i, "utf-8") for i in gene]))
-
-        f.write(struct.pack("I", len(scaffolds)))
-        f.write(struct.pack("I"*len(scaffolds), *[len(i) for i in scaffolds_list]))
-        for scaffold in scaffolds_list:
-            f.write(struct.pack("c" * len(scaffold), *[bytes(i, "utf-8") for i in scaffold]))
-        for line in data:
-            data_split = line.strip().split("\t")
-            for i in [5, 8, 9, 10, 11]:
-                if data_split[i] == "stop":
-                    data_split[i] = "-"
-            data_split[0] = scaffolds[data_split[0]]
-            data_split[1] = int(data_split[1])
-            # data_split[4] = int(data_split[4])
-            data_split[6] = genes[data_split[6]]
-            if data_split[7] == "True":
-                data_split[7] = True
-            elif data_split[7] == "False":
-                data_split[7] = False
-            single_char_list = []
-            for i in data_split:
-                if type(i) == str:
-                    a = [bytes(b, "utf-8") for b in i]
-                    single_char_list.extend(a)
-
-                else:
-                    single_char_list.append(i)
-            fmt = format_string(0)
-            f.write(struct.pack(fmt, *single_char_list))
-
-    f.close()
 
 
 def read_file(path):
@@ -392,7 +259,6 @@ def read_file(path):
                 data[line_split[0]][line_split[1]] = line_split[2:]
     f.close()
     return data
-            #todo: read file, figure out what to search
             
 def read_binary_file(path):
     data = {}
@@ -401,16 +267,16 @@ def read_binary_file(path):
         number_of_genes = struct.unpack("I", f.read(4))[0]
         genes_str_length = struct.unpack("I" * number_of_genes, f.read(4 * number_of_genes))
         for i in range(number_of_genes):
-            scaffold_name = struct.unpack("c" * genes_str_length[i], f.read(genes_str_length[i]))
-            scaffold_name = "".join([str(letter, "utf-8") for letter in scaffold_name])
-            genes[i] = scaffold_name
+            gene_name = struct.unpack("c" * genes_str_length[i], f.read(genes_str_length[i]))
+            gene_name = "".join([str(letter, "utf-8") for letter in gene_name])
+            genes[i] = gene_name
         scaffolds = {}
         number_of_scaffolds = struct.unpack("I", f.read(4))[0]
         scaffolds_str_length = struct.unpack("I" * number_of_scaffolds, f.read(4 * number_of_scaffolds))
         for i in range(number_of_scaffolds):
             scaffold_name = struct.unpack("c" * scaffolds_str_length[i], f.read(scaffolds_str_length[i]))
             scaffold_name = "".join([str(letter, "utf-8") for letter in scaffold_name])
-            scaffolds[i] = scaffold_name
+            scaffolds[scaffold_name] = i
         while True:
             scaffold_and_position = f.read(8)
             rest = f.read(byte_size_of_fmt(format_string()) - 8)
@@ -424,29 +290,50 @@ def read_binary_file(path):
                 data[scaffold_and_position[0]] = {}
                 data[scaffold_and_position[0]][scaffold_and_position[1]] = rest
 
-            # print(line_translated)
-        # while True:
-        #     bytes_line = f.read(byte_size_of_fmt(format_string()))
-        #     if not bytes_line:
-        #         # EOF
-        #         break
-        #     line = struct.unpack(format_string(), bytes_line)
-        #     line_translated = [scaffolds[line[0]], line[1], str(line[2], "utf-8"), str(line[3], "utf-8"),
-        #                        str(line[4], "utf-8"), str(line[5], "utf-8"), genes[line[6]], line[7],
-        #                        str(line[8], "utf-8"), str(line[9], "utf-8"), str(line[10], "utf-8"),
-        #                        str(line[11], "utf-8")]
-        #     for i in [5, 8, 9, 10, 11]:
-        #         if line_translated[i] == "-":
-        #             line_translated[i] = "stop"
-        #
-        #     if line_translated[0] in data:
-        #         data[line_translated[0]][line_translated[1]] = line_translated[2:]
-        #     else:
-        #         data[line_translated[0]] = {}
-        #         data[line_translated[0]][line_translated[1]] = line_translated[2:]
-        #
-        #     # print(line_translated)
-    return data
+    return data, genes, scaffolds
+
+
+def decode_line(line, genes):
+    line = struct.unpack(format_string()[2:], line)
+    line_translated = [str(line[0], "utf-8"), str(line[1], "utf-8"),
+                       str(line[2], "utf-8"), str(line[3], "utf-8"), genes[line[4]], line[5],
+                       str(line[6], "utf-8"), str(line[7], "utf-8"), str(line[8], "utf-8"),
+                       str(line[9], "utf-8")]
+    for i in [3, 6, 7, 8, 9]:
+        if line_translated[i] == "-":
+            line_translated[i] = "stop"
+    return line_translated
+
+
+def write_human_readable(path_bin, path_hr=None):
+    if path_hr is None:
+        path_hr = path_bin[:-3] + "tsv"
+    with open(path_hr, "w") as outf:
+        with open(path_bin, "rb") as f:
+            genes = {}
+            number_of_genes = struct.unpack("I", f.read(4))[0]
+            genes_str_length = struct.unpack("I" * number_of_genes, f.read(4 * number_of_genes))
+            for i in range(number_of_genes):
+                gene_name = struct.unpack("c" * genes_str_length[i], f.read(genes_str_length[i]))
+                gene_name = "".join([str(letter, "utf-8") for letter in gene_name])
+                genes[i] = gene_name
+            scaffolds = {}
+            number_of_scaffolds = struct.unpack("I", f.read(4))[0]
+            scaffolds_str_length = struct.unpack("I" * number_of_scaffolds, f.read(4 * number_of_scaffolds))
+            for i in range(number_of_scaffolds):
+                scaffold_name = struct.unpack("c" * scaffolds_str_length[i], f.read(scaffolds_str_length[i]))
+                scaffold_name = "".join([str(letter, "utf-8") for letter in scaffold_name])
+                scaffolds[i] = scaffold_name
+            while True:
+                scaffold_and_position = f.read(8)
+                rest = f.read(byte_size_of_fmt(format_string()) - 8)
+                if not scaffold_and_position or not rest:
+                    # EOF
+                    break
+                scaffold_and_position = struct.unpack("II", scaffold_and_position)
+                rest = [str(i) for i in  decode_line(rest, genes)]
+                outf.write(scaffolds[scaffold_and_position[0]] + "\t" + str(scaffold_and_position[1]) + "\t" +
+                               "\t".join(rest) + "\n")
 
 
 if __name__ == "__main__":
