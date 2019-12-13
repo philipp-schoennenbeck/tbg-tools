@@ -79,10 +79,10 @@ def load_gff(path, types=None, verbose=False):
                 continue
             line_split = line.split("\t")
             if types is None:
-                if len(line_split) >= 3:
+                if len(line_split) >= 8:
                     gff_data["all"].append(line)
             else:
-                if len(line_split) >= 3:
+                if len(line_split) >= 8:
                     for i in types:
                         if line_split[2] == i:
                             gff_data[i].append(line)
@@ -303,37 +303,6 @@ def decode_line(line, genes):
         if line_translated[i] == "-":
             line_translated[i] = "stop"
     return line_translated
-
-
-def write_human_readable(path_bin, path_hr=None):
-    if path_hr is None:
-        path_hr = path_bin[:-3] + "tsv"
-    with open(path_hr, "w") as outf:
-        with open(path_bin, "rb") as f:
-            genes = {}
-            number_of_genes = struct.unpack("I", f.read(4))[0]
-            genes_str_length = struct.unpack("I" * number_of_genes, f.read(4 * number_of_genes))
-            for i in range(number_of_genes):
-                gene_name = struct.unpack("c" * genes_str_length[i], f.read(genes_str_length[i]))
-                gene_name = "".join([str(letter, "utf-8") for letter in gene_name])
-                genes[i] = gene_name
-            scaffolds = {}
-            number_of_scaffolds = struct.unpack("I", f.read(4))[0]
-            scaffolds_str_length = struct.unpack("I" * number_of_scaffolds, f.read(4 * number_of_scaffolds))
-            for i in range(number_of_scaffolds):
-                scaffold_name = struct.unpack("c" * scaffolds_str_length[i], f.read(scaffolds_str_length[i]))
-                scaffold_name = "".join([str(letter, "utf-8") for letter in scaffold_name])
-                scaffolds[i] = scaffold_name
-            while True:
-                scaffold_and_position = f.read(8)
-                rest = f.read(byte_size_of_fmt(format_string()) - 8)
-                if not scaffold_and_position or not rest:
-                    # EOF
-                    break
-                scaffold_and_position = struct.unpack("II", scaffold_and_position)
-                rest = [str(i) for i in  decode_line(rest, genes)]
-                outf.write(scaffolds[scaffold_and_position[0]] + "\t" + str(scaffold_and_position[1]) + "\t" +
-                               "\t".join(rest) + "\n")
 
 
 if __name__ == "__main__":

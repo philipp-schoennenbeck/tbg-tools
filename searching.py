@@ -56,18 +56,4 @@ def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile=
 
 
 if __name__ == "__main__":
-    # gff_file = "E_coli.gff"
-    # fasta_file = "E_coli.fa"
-    # outfile = "E_coli"
-    gff_file = "radix_whole.gff"
-    fasta_file = "radix_whole.fa"
-    outfile = "radix_whole"
-
-
-    time = datetime.now()
-    check_snps(f"{outfile}.bin", snps=[["scaffold2697_size39557", 15664], ["scaffold2697_size39557", 15665], ["scaffold2697_size39557", 1] ], binary=True)
-    print((datetime.now() - time).total_seconds())
-
-    check_snps(f"{outfile}.bin", snp_file="snps_radix.tsv", binary=True)
-    # print(radix_data)
-    write_human_readable("radix.bin", "radix_tsv_from_bin.tsv")
+    pass
