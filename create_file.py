@@ -94,26 +94,20 @@ def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin=
     for i in range(10):
         timestamps.append(0)
     #
-    with open("protein_test.fa", "w") as f:
-        for gene in gene_sequences.keys():
-            if gene == "maker-scaffold1079_size269654-augustus-gene-0.59":
-                a = gene_sequences[gene]
-                b = gff_data[gene]
-                c = get_other_strand(gene_sequences[gene])
-                d = gene_sequences[gene][::-1]
-            f.write(gene + "\n")
-            if gff_data[gene][1]:
-                f.write(rna_to_protein(gene_sequences[gene], aa_codes) + "\n")
-            else:
-                f.write(rna_to_protein(get_other_strand(gene_sequences[gene]), aa_codes) + "\n")
-
-    f.close()
-
-    # with open("radix_whole.gff") as f:
-    #     a = f.read()
-    #     a = a.split("\n")
-    #     while True:
-    #         sleep(20)
+    # with open("protein_test.fa", "w") as f:
+    #     for gene in gene_sequences.keys():
+    #         if gene == "maker-scaffold1079_size269654-augustus-gene-0.59":
+    #             a = gene_sequences[gene]
+    #             b = gff_data[gene]
+    #             c = get_other_strand(gene_sequences[gene])
+    #             d = gene_sequences[gene][::-1]
+    #         f.write(gene + "\n")
+    #         if gff_data[gene][1]:
+    #             f.write(rna_to_protein(gene_sequences[gene], aa_codes) + "\n")
+    #         else:
+    #             f.write(rna_to_protein(get_other_strand(gene_sequences[gene]), aa_codes) + "\n")
+    #
+    # f.close()
 
 
     if verbose:

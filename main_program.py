@@ -15,9 +15,8 @@ if __name__ == "__main__":
 
     if len(sys.argv) >= 2:
         if sys.argv[1] == "create":
-            file_group = parser.add_mutually_exclusive_group(required=True)
-            file_group.add_argument("-f", "--fasta", help="path to fasta file", default=False)
-            file_group.add_argument("-g", "--gff", help="path to gff file", default=False)
+            parser.add_argument("-f", "--fasta", help="path to fasta file", default=False)
+            parser.add_argument("-g", "--gff", help="path to gff file", default=False)
             parser.add_argument("-o", "--outfile", help="path to the created file, default is the gff name",
                                 default=None)
             parser.add_argument("-hr", "--human_readable", help="creates a human readable file aswell",
