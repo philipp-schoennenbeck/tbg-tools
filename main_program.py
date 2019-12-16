@@ -15,9 +15,8 @@ if __name__ == "__main__":
 
     if len(sys.argv) >= 2:
         if sys.argv[1] == "create":
-            file_group = parser.add_mutually_exclusive_group(required=True)
-            file_group.add_argument("-f", "--fasta", help="path to fasta file", default=False)
-            file_group.add_argument("-g", "--gff", help="path to gff file", default=False)
+            parser.add_argument("-f", "--fasta", help="path to fasta file", required=True)
+            parser.add_argument("-g", "--gff", help="path to gff file", required=True)
             parser.add_argument("-o", "--outfile", help="path to the created file, default is the gff name",
                                 default=None)
             parser.add_argument("-hr", "--human_readable", help="creates a human readable file aswell",
@@ -28,6 +27,7 @@ if __name__ == "__main__":
             parser.add_argument("-hro", "--human_readable_outfile", help="path to the human readable file,"
                                                                          "default is \"outfile\"_hr.tsv")
             parser.add_argument("-v", "--verbose", help="increases verbosity", action="store_true")
+            parser.add_argument("-t", "--threads", help="number of threads to be used", default=1, type=int)
             args = parser.parse_args(sys.argv[2:])
 
 
@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
             create_file.create_the_file(args.gff, args.fasta, outfile_bin=outfile, outfile_hr=hro,
                                         verbose=args.verbose, create_binary=True, write_tsv=hr,
-                                        aa_code=args.amino_acid_codes )
+                                        aa_code=args.amino_acid_codes, threads=args.threads)
         elif sys.argv[1] == "search":
             parser.add_argument("-n", "--nucleotide_file", help="path to the binary nucleotide file create with"
                                                                 " \"create\"", required=True)
