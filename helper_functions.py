@@ -1,9 +1,11 @@
 import struct
-
+import multiprocessing as mp
+import datetime
 bases = ["A", "C", "G", "U"]
 
 
 def load_aa_codes(code="default"):
+    """Loads in the aa_codes.txt file and finds the right codes"""
     aa_code = {}
     with open("aa_codes.txt", "r") as f:
         found_code = False
@@ -18,6 +20,8 @@ def load_aa_codes(code="default"):
             elif line == f"@{code}":
                 found_code = True
     f.close()
+    if not found_code:
+        raise Exception(f"{code} amino acid code not found in aa_codes.txt, give only the name of the code without @")
     return aa_code
 
 
@@ -114,7 +118,8 @@ def load_fasta(path, seperator=None, verbose=False):
         f.close()
         for scaffold in scaffolds.keys():
             scaffolds[scaffold] = "".join(scaffolds[scaffold])
-        if verbose: print("Loading fasta completed")
+        if verbose:
+            print("Loading fasta completed")
         return scaffolds
     except:
         raise Exception(f"Error with opening the fasta file \"{path}\"")
@@ -162,8 +167,10 @@ def sort_first(element):
 
 def get_genes_and_cds(gff_path, verbose=False):
     """loads a gff file and finds all the genes, CDS and mRNA and returns the genes with their corresponding CDS"""
-    if verbose:print("Starting to structure gff data!")
+
     gff_data = load_gff(gff_path, ["gene","CDS", "mRNA"],verbose=verbose)
+    if verbose:
+        print("Starting to structure gff data!")
     gene_and_cds = {}
     mrna = {}
     for gene in gff_data["gene"]:
@@ -231,10 +238,12 @@ def get_current_triplett(sequence, position, forward=True):
 
 
 def format_string():
+    """Returns the format string of the binary file"""
     return "IIccccI?cccc"
 
 
 def byte_size_of_fmt(fmt):
+    """Returns the byte size for a format string"""
     sizes = {"I": 4, "c": 1, "?": 1}
     size = 0
     for i in fmt:
@@ -243,6 +252,8 @@ def byte_size_of_fmt(fmt):
 
 
 def read_file(path):
+    """loads in a human readable file and returns a dictionary with scaffolds as keys and dictionaries as values
+    these nested dictionaries have the positions as keys"""
     data = {}
     with open(path, "r") as f:
         for line in f:
@@ -253,14 +264,83 @@ def read_file(path):
             elif line_split[7] == "True":
                 line_split[7] = True
             if line_split[0] in data:
-                data[line_split[0]][line_split[1]] = line_split[2:]
+                if line_split[1] in data[line_split[0]]:
+                    data[line_split[0]][line_split[1]].append(line_split[2:])
+                else:
+                    data[line_split[0]][line_split[1]] = [line_split[2:]]
             else:
                 data[line_split[0]] = {}
-                data[line_split[0]][line_split[1]] = line_split[2:]
+                data[line_split[0]][line_split[1]] = [line_split[2:]]
     f.close()
     return data
-            
-def read_binary_file(path):
+
+
+def read_binary_lines(lines):
+    """Reads a bunch of binary lines and creates a dictionary"""
+    data = {}
+    for line in [lines[i:i + byte_size_of_fmt(format_string())] for i in
+                 range(0, len(lines), byte_size_of_fmt(format_string()))]:
+            scaffold_and_position = line[0:8]
+            rest = line[8:]
+            if not scaffold_and_position or not rest:
+                # EOF
+                break
+            scaffold_and_position = struct.unpack("II", scaffold_and_position)
+            if scaffold_and_position[0] in data:
+                data[scaffold_and_position[0]][scaffold_and_position[1]] = rest
+            else:
+                data[scaffold_and_position[0]] = {}
+                data[scaffold_and_position[0]][scaffold_and_position[1]] = rest
+    return data
+
+def read_binary_file(path, threads=1):
+    """loads in a tbg and returns a dictionary with scaffolds as keys and dictionaries as values
+    these nested dictionaries have the positions as keys, also returns a dictionary for genes and scaffold names,
+    because they are still coded, can use multiple threads"""
+    data = {}
+    with open(path, "rb") as f:
+        genes = {}
+        number_of_genes = struct.unpack("I", f.read(4))[0]
+        genes_str_length = struct.unpack("I" * number_of_genes, f.read(4 * number_of_genes))
+        for i in range(number_of_genes):
+            gene_name = struct.unpack("c" * genes_str_length[i], f.read(genes_str_length[i]))
+            gene_name = "".join([str(letter, "utf-8") for letter in gene_name])
+            genes[i] = gene_name
+        scaffolds = {}
+        number_of_scaffolds = struct.unpack("I", f.read(4))[0]
+        scaffolds_str_length = struct.unpack("I" * number_of_scaffolds, f.read(4 * number_of_scaffolds))
+        for i in range(number_of_scaffolds):
+            scaffold_name = struct.unpack("c" * scaffolds_str_length[i], f.read(scaffolds_str_length[i]))
+            scaffold_name = "".join([str(letter, "utf-8") for letter in scaffold_name])
+            scaffolds[scaffold_name] = i
+            data[scaffold_name] = {}
+        thread_bytes = bytearray(f.read())
+    f.close()
+    fmt_s = byte_size_of_fmt(format_string())
+    thread_sizes = int((len(thread_bytes)/fmt_s)/threads)+1
+    thread_bytes = [thread_bytes[i:i+ thread_sizes*fmt_s] for i in range(0, len(thread_bytes), thread_sizes*fmt_s)]
+    pool = mp.Pool(processes=len(thread_bytes))
+    results = [
+        pool.apply_async(read_binary_lines, args=(thread_bytes[x],))
+        for x in range(len(thread_bytes))]
+    output = [p.get() for p in results]
+    for i in output:
+        for scaffold_name in i.keys():
+            if scaffold_name not in data:
+                data[scaffold_name] = {}
+            for position in i[scaffold_name].keys():
+                if position in data[scaffold_name]:
+                    data[scaffold_name][position].append(i[scaffold_name][position])
+                else:
+                    data[scaffold_name][position] = [i[scaffold_name][position]]
+
+    return data, genes, scaffolds
+
+
+def read_binary_file_no_threads(path, threads=1):
+    """loads in a tbg and returns a dictionary with scaffolds as keys and dictionaries as values
+    these nested dictionaries have the positions as keys, also returns a dictionary for genes and scaffold names,
+    because they are still coded"""
     data = {}
     with open(path, "rb") as f:
         genes = {}
@@ -283,17 +363,21 @@ def read_binary_file(path):
             if not scaffold_and_position or not rest:
                 # EOF
                 break
-            scaffold_and_position =struct.unpack("II", scaffold_and_position)
+            scaffold_and_position = struct.unpack("II", scaffold_and_position)
             if scaffold_and_position[0] in data:
-                data[scaffold_and_position[0]][scaffold_and_position[1]] = rest
+                if scaffold_and_position[1] in data[scaffold_and_position[0]]:
+                    data[scaffold_and_position[0]][scaffold_and_position[1]].append(rest)
+                else:
+                    data[scaffold_and_position[0]][scaffold_and_position[1]] = [rest]
             else:
                 data[scaffold_and_position[0]] = {}
-                data[scaffold_and_position[0]][scaffold_and_position[1]] = rest
+                data[scaffold_and_position[0]][scaffold_and_position[1]] = [rest]
 
     return data, genes, scaffolds
 
 
 def decode_line(line, genes):
+    """Decodes a line as given in the format string"""
     line = struct.unpack(format_string()[2:], line)
     line_translated = [str(line[0], "utf-8"), str(line[1], "utf-8"),
                        str(line[2], "utf-8"), str(line[3], "utf-8"), genes[line[4]], line[5],

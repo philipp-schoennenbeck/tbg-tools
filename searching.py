@@ -9,50 +9,77 @@ def load_file(path, binary=False):
     return data
 
 
-def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile="snps.tsv", rest_file=None):
-
+def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile="snps.tsv", rest_file=None, threads=1):
+    #load in all the snps
     if snp_file is not None:
-        snps = []
         with open(snp_file, "r") as f:
             snps = f.read().split("\n")
             for i in range(len(snps)):
                 dummy = snps[i].split("\t")
                 snps[i] = [dummy[0], int(dummy[1])]
 
+    #load in the tbg file
     if binary:
-        data, genes, scaffolds = read_binary_file(nucleotide_file)
-    else:
-        data = read_file(nucleotide_file)
-    if rest_file is not None:
-        r = open(rest_file, "w")
-    with open(outfile, "w") as f:
-        for snp in snps:
-            if binary:
-                if snp[0] in scaffolds:
-                    scaffold = scaffolds[snp[0]]
+        time = datetime.now()
+        try:
+            if threads > 1:
+                data, genes, scaffolds = read_binary_file(nucleotide_file, threads=threads)
             else:
-                scaffold = snp[0]
-            if scaffold in data:
-                if snp[1] in data[scaffold]:
+                data, genes, scaffolds = read_binary_file_no_threads(nucleotide_file)
+        except Exception:
+            raise Exception("Error with loading the tbg file!")
+        print((datetime.now()-time).total_seconds())
+    else:
+        try:
+            data = read_file(nucleotide_file)
+        except Exception:
+            raise Exception("Error with loading in the hr file!")
+
+    #check for every SNP if it is in the tbg file
+    real_snps = []
+    rest = []
+    for snp in snps:
+        if binary:
+            if snp[0] in scaffolds:
+                scaffold = scaffolds[snp[0]]
+            else:
+                scaffold = None
+        else:
+            scaffold = snp[0]
+        if scaffold in data:
+            if snp[1] in data[scaffold]:
+                for line in data[scaffold][snp[1]]:
+                    snp_dummy = snp
                     if binary:
-                        snp_information = decode_line(data[scaffold][snp[1]], genes)
-                        snp.extend(snp_information)
-                        snp.append("\n")
-                        snp = "\t".join([str(i) for i in snp])
+                        snp_information = decode_line(line, genes)
+                        snp_dummy.extend(snp_information)
+                        snp_dummy.append("\n")
+                        snp_dummy = "\t".join([str(i) for i in snp_dummy])
 
                     else:
-                        snp_information = data[scaffold][snp[1]]
-                        snp.extend(snp_information)
-                        snp.append("\n")
-                        snp = "\t".join([str(i) for i in snp])
 
-                    f.writelines(snp)
-                else:
-                    if rest_file is not None:
-                        r.write(f"{scaffold}\t{snps[0]}\n")
+                        snp_information = line
+                        snp_dummy.extend(snp_information)
+                        snp_dummy.append("\n")
+                        snp_dummy = "\t".join([str(i) for i in snp_dummy])
+
+                    real_snps.append(snp_dummy)
             else:
                 if rest_file is not None:
-                    r.write(f"{scaffold}\t{snps[0]}\n")
+                    rest.append(f"{snp[0]}\t{snp[1]}\n")
+        else:
+            if rest_file is not None:
+                rest.append(f"{snp[0]}\t{snp[1]}\n")
+
+    #output
+    if rest_file is not None:
+        r = open(rest_file, "w")
+        for snp in rest:
+            r.write(snp)
+    f = open(outfile, "w")
+    for snp in real_snps:
+        f.write(snp)
+
 
 
 if __name__ == "__main__":

@@ -3,6 +3,8 @@ import helper_functions
 import searching
 import argparse
 import sys
+import os.path
+
 
 if __name__ == "__main__":
     description = "This is a program to work with ??? files.\n" \
@@ -23,7 +25,7 @@ if __name__ == "__main__":
                                 action="store_true")
             parser.add_argument("-aa", "--amino_acid_codes", help="selects the amino acid code from aa_codes.txt,"
                                                                   " default is default", default="default")
-
+            parser.add_argument("-p", "--protein_file", help="path to an extra protein fasta file", default=None)
             parser.add_argument("-hro", "--human_readable_outfile", help="path to the human readable file,"
                                                                          "default is \"outfile\"_hr.tsv")
             parser.add_argument("-v", "--verbose", help="increases verbosity", action="store_true")
@@ -44,29 +46,38 @@ if __name__ == "__main__":
             else:
                 hr = False
                 hro = ""
-
+            if not os.path.isfile(args.gff):
+                raise FileNotFoundError(f"gff file was not found (\"{args.gff}\")")
+            if not os.path.isfile(args.fasta):
+                raise FileNotFoundError(f"fasta file was not found (\"{args.fasta}\")")
             create_file.create_the_file(args.gff, args.fasta, outfile_bin=outfile, outfile_hr=hro,
                                         verbose=args.verbose, create_binary=True, write_tsv=hr,
-                                        aa_code=args.amino_acid_codes, threads=args.threads)
+                                        aa_code=args.amino_acid_codes, threads=args.threads, protein=args.protein_file)
         elif sys.argv[1] == "search":
             parser.add_argument("-n", "--nucleotide_file", help="path to the binary nucleotide file create with"
                                                                 " \"create\"", required=True)
             snp_group = parser.add_mutually_exclusive_group(required=True)
-            snp_group.add_argument("-b", "--bed", help="path to bed file")
+            snp_group.add_argument("-b", "--bed", help="path to bed file with the SNPs, \"scaffold  position\"")
             snp_group.add_argument("-s", "--snps", help="list of SNPs separated by space e.g. \"scaffold1,position1"
                                                      "scaffold2,position2 \" ", nargs="+")
             parser.add_argument("-o", "--outfile", help="path to the outfile for relevant SNPs,"
                                                         " default is \"SNPs.tsv\"", default="SNPs.tsv")
             parser.add_argument("-r", "--rest", help="path to the file with all none relevant SNPs, default is no file")
             parser.add_argument("-v", "--verbose", help="increases verbosity", action="store_true")
+            parser.add_argument("-t", "--threads", help="number of threads to be used", default=1, type=int)
             args = parser.parse_args(sys.argv[2:])
+
+            if not os.path.isfile(args.nucleotide_file):
+                raise FileNotFoundError(f"tbg file was not found (\"{args.nucleotide_file}\")")
             if args.bed:
+                if not os.path.isfile(args.bed):
+                    raise FileNotFoundError(f"bed file was not found (\"{args.bed}\")")
                 searching.check_snps(args.nucleotide_file, snp_file=args.bed, binary=True, outfile=args.outfile,
-                                     rest_file=args.rest)
+                                     rest_file=args.rest, threads=args.threads)
             elif args.snps:
                 snps = [i.split(",") for i in args.snps]
                 searching.check_snps(args.nucleotide_file, snps=snps, binary=True, outfile=args.outfile,
-                                     rest_file=args.rest)
+                                     rest_file=args.rest, threads=args.threads)
         elif sys.argv[1] == "convert":
             parser.description = "Converts the nucleotide file to a human readable tsv file." \
                                  " These files can get very big"
@@ -75,6 +86,8 @@ if __name__ == "__main__":
                                                        " file with .tsv")
             parser.add_argument("-v", "--verbose", help="increases verbosity", action="store_true")
             args = parser.parse_args(sys.argv[2:])
+            if not os.path.isfile(args.nucleotide_file):
+                raise FileNotFoundError(f"tbg file was not found (\"{args.nucleotide_file}\")")
             create_file.write_human_readable(args.nucleotide_file, path_hr=args.outfile)
     else:
         parser.print_help()
