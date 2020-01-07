@@ -1,5 +1,4 @@
 from helper_functions import *
-from datetime import datetime
 
 def load_file(path, binary=False):
     if not binary:
@@ -9,18 +8,21 @@ def load_file(path, binary=False):
     return data
 
 
-def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile="snps.tsv", rest_file=None, threads=1):
+def check_snps(nucleotide_file, snp_file=None, snps=[], binary=False, outfile="snps.tsv", rest_file=None, threads=1):
     #load in all the snps
     if snp_file is not None:
         with open(snp_file, "r") as f:
-            snps = f.read().split("\n")
-            for i in range(len(snps)):
-                dummy = snps[i].split("\t")
-                snps[i] = [dummy[0], int(dummy[1])]
+
+            file = f.read().split("\n")
+            for i in range(len(file)):
+
+                dummy = file[i].split("\t")
+                if len(file[i].strip("\t\n ")) == 0 or len(dummy) != 2:
+                    continue
+                snps.append([dummy[0], int(dummy[1])])
 
     #load in the tbg file
     if binary:
-        time = datetime.now()
         try:
             if threads > 1:
                 data, genes, scaffolds = read_binary_file(nucleotide_file, threads=threads)
@@ -28,7 +30,6 @@ def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile=
                 data, genes, scaffolds = read_binary_file_no_threads(nucleotide_file)
         except Exception:
             raise Exception("Error with loading the tbg file!")
-        print((datetime.now()-time).total_seconds())
     else:
         try:
             data = read_file(nucleotide_file)
