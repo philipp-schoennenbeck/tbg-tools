@@ -57,11 +57,13 @@ if __name__ == "__main__":
             snp_group.add_argument("-b", "--bed", help="path to tab seperated bed file with the SNPs, \"scaffold  position\"")
             snp_group.add_argument("-s", "--snps", help="list of SNPs separated by space e.g. \"scaffold1,position1"
                                                      "scaffold2,position2 \" ", nargs="+")
-            parser.add_argument("-o", "--outfile", help="path to the outfile for relevant SNPs,"
-                                                        " default is \"SNPs.tsv\"", default="SNPs.tsv")
+            parser.add_argument("-o", "--outfile", help="path to the resulted outfile,"
+                                                        " default is \"default.tsv\"", default="default.tsv")
             parser.add_argument("-r", "--rest", help="path to the file with all none relevant SNPs, default is no file")
             parser.add_argument("-v", "--verbose", help="increases verbosity", action="store_true")
             parser.add_argument("-t", "--threads", help="number of threads to be used", default=1, type=int)
+            snp_group.add_argument("-g", "--genes", help="list of genes for a human readable file with only these genes,"
+                                                      "seperated by space e.g. \"gene1 gene2 gene3\"", nargs="+")
             args = parser.parse_args(sys.argv[2:])
 
             if not os.path.isfile(args.tbg_file):
@@ -75,6 +77,8 @@ if __name__ == "__main__":
                 snps = [i.split(",") for i in args.snps]
                 searching.check_snps(args.tbg_file, snps=snps, binary=True, outfile=args.outfile,
                                      rest_file=args.rest, threads=args.threads)
+            elif args.genes:
+                searching.check_gene(args.tbg_file, args.genes, args.outfile, args.verbose, args.rest)
         elif sys.argv[1] == "convert":
             parser.description = "Converts the tbg file to a human readable tsv file." \
                                  " These files can get very big"

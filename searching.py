@@ -81,6 +81,59 @@ def check_snps(nucleotide_file, snp_file=None, snps=[], binary=False, outfile="s
     for snp in real_snps:
         f.write(snp)
 
+def check_gene(tbg_file, genes_to_find, outfile, verbose, rest):
+    if verbose:
+        print("Searching for genes!")
+    with open(tbg_file, "rb") as f:
+        genes = {}
+        genes_found = {}
+        number_of_genes = struct.unpack("I", f.read(4))[0]
+        genes_str_length = struct.unpack("I" * number_of_genes, f.read(4 * number_of_genes))
+        for i in range(number_of_genes):
+            gene_name = struct.unpack("c" * genes_str_length[i], f.read(genes_str_length[i]))
+            gene_name = "".join([str(letter, "utf-8") for letter in gene_name])
+            genes[i] = gene_name
+            genes_found[gene_name] = True
+        scaffolds = {}
+        number_of_scaffolds = struct.unpack("I", f.read(4))[0]
+        scaffolds_str_length = struct.unpack("I" * number_of_scaffolds, f.read(4 * number_of_scaffolds))
+        for i in range(number_of_scaffolds):
+            scaffold_name = struct.unpack("c" * scaffolds_str_length[i], f.read(scaffolds_str_length[i]))
+            scaffold_name = "".join([str(letter, "utf-8") for letter in scaffold_name])
+            scaffolds[i] = scaffold_name
+
+        if rest:
+            rest_file = open(rest, "w")
+        for gene in genes_to_find:
+            if not gene in genes_found:
+                if rest:
+                    rest_file.write(gene)
+                if verbose:
+                    print(f"{gene} was not found!")
+        if rest:
+            rest_file.close()
+
+        fmt_size_before_gene = byte_size_of_fmt("IIcccc")
+        fmt_size_after_gene = byte_size_of_fmt("?cccc")
+        with open(outfile, "w") as outfile:
+            while True:
+                line = f.read(byte_size_of_fmt(format_string()))
+                gene = line[fmt_size_before_gene:fmt_size_before_gene + 4]
+
+                if not line:
+                    # EOF
+                    break
+                gene = struct.unpack("I", gene)
+                if genes[gene[0]] in genes_to_find:
+                    line = struct.unpack(format_string(), line)
+                    line_translated = [scaffolds[int(line[0])], str(int(line[1])), str(line[2], "utf-8"), str(line[3], "utf-8"),
+                                       str(line[4], "utf-8"), str(line[5], "utf-8"), genes[line[6]], str(line[7]),
+                                       str(line[8], "utf-8"), str(line[9], "utf-8"), str(line[10], "utf-8"),
+                                       str(line[11], "utf-8"), "\n"]
+                    for i in [5, 8, 9, 10, 11]:
+                        if line_translated[i] == "-":
+                            line_translated[i] = "stop"
+                    outfile.write("\t".join(line_translated))
 
 
 if __name__ == "__main__":
