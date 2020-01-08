@@ -64,6 +64,8 @@ if __name__ == "__main__":
             parser.add_argument("-t", "--threads", help="number of threads to be used", default=1, type=int)
             snp_group.add_argument("-g", "--genes", help="list of genes for a human readable file with only these genes,"
                                                       "seperated by space e.g. \"gene1 gene2 gene3\"", nargs="+")
+            snp_group.add_argument("-c", "--scaffolds", help="list of scaffolds for a human readable file with only these scaffolds,"
+                                                      "seperated by space e.g. \"scaffold1 scaffold2 scaffold3\"", nargs="+")
             args = parser.parse_args(sys.argv[2:])
 
             if not os.path.isfile(args.tbg_file):
@@ -79,6 +81,8 @@ if __name__ == "__main__":
                                      rest_file=args.rest, threads=args.threads)
             elif args.genes:
                 searching.check_gene(args.tbg_file, args.genes, args.outfile, args.verbose, args.rest)
+            elif args.scaffolds:
+                searching.check_scaffold(args.tbg_file, args.scaffolds, args.outfile, args.verbose, args.rest)
         elif sys.argv[1] == "convert":
             parser.description = "Converts the tbg file to a human readable tsv file." \
                                  " These files can get very big"
