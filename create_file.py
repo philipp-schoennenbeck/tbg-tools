@@ -154,16 +154,25 @@ def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin=
             number_to_scaffold[scaffold_counter] = gff_data[gene][2]
             scaffold_counter += 1
 
-
+    write_gene = False
     # writing the protein file
     if protein is not None:
         with open(protein, "w") as f:
+            if write_gene:
+                g = open("E_coli_genes.fa", "w")
             for gene in gene_sequences.keys():
                 f.write(">" + gene + "\n")
+                if write_gene:
+                    g.write(">" + gene + "\n")
                 if gff_data[gene][1]:
-                    f.write(rna_to_protein(gene_sequences[gene], aa_codes)[:-1] + "\n")
+                    pass
+                    f.write(rna_to_protein(gene_sequences[gene], aa_codes) + "\n")
+                    if write_gene:
+                        g.write(gene_sequences[gene] + "\n")
                 else:
-                    f.write(rna_to_protein(get_other_strand(gene_sequences[gene]), aa_codes)[:-1] + "\n")
+                    f.write(rna_to_protein(get_other_strand(gene_sequences[gene]), aa_codes) + "\n")
+                    if write_gene:
+                        g.write(get_other_strand(gene_sequences[gene]) + "\n")
 
         f.close()
     #todo: intermediate files for pcs with low ram

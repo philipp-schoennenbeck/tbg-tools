@@ -52,10 +52,13 @@ def get_all_aa(code, position, aa_codes, three_letter_code=False):
                         f" position: {position})")
 
 
-def get_other_strand(strand):
+def get_other_strand(strand, rna=True):
     """"Returns the corresponding bases of the other DNA strand"""
     strand = strand.upper()
-    strand = strand.replace("A", "u").replace("T", "a").replace("C", "g").replace("G", "c")[::-1].upper()
+    if rna:
+        strand = strand.replace("A", "u").replace("U", "a").replace("C", "g").replace("G", "c")[::-1].upper()
+    else:
+        strand = strand.replace("A", "t").replace("T", "a").replace("C", "g").replace("G", "c")[::-1].upper()
     return strand
 
 

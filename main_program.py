@@ -7,6 +7,8 @@ import os.path
 
 if __name__ == "__main__":
     description = "This is a program to work with tbg files.\n" \
+                  "tbg files are files to fast and easily find out if specific positions on scaffolds are within a gene" \
+                  "or not and if they are within a gene, you get additional information about this position" \
                   "create\tcreate the tbg file with a gff and a fasta file\n" \
                   "search\tsearches in the tbg file for specific SNPs\n" \
                   "convert\tconvert the tbg file to a human readable file"
