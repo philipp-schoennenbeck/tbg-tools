@@ -155,17 +155,22 @@ def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin=
             scaffold_counter += 1
 
     write_gene = False
+
     # writing the protein file
     if protein is not None:
+        if verbose:
+            print("Starting to write protein_file")
         with open(protein, "w") as f:
             if write_gene:
                 g = open("E_coli_genes.fa", "w")
             for gene in gene_sequences.keys():
+                if gene == "maker-scaffold_186_motu5-augustus-gene-0.120-mRNA-1":
+                    a = 1
                 f.write(">" + gene + "\n")
                 if write_gene:
                     g.write(">" + gene + "\n")
                 if gff_data[gene][1]:
-                    pass
+
                     f.write(rna_to_protein(gene_sequences[gene], aa_codes) + "\n")
                     if write_gene:
                         g.write(gene_sequences[gene] + "\n")
@@ -176,7 +181,7 @@ def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin=
 
         f.close()
     #todo: intermediate files for pcs with low ram
-
+    return
     # Distributing the genes on different dictionaries for the multiprocessing
     thread_gene_sequences_keys = [[]]
     for i in gene_sequences.keys():

@@ -29,12 +29,22 @@ def get_code(code, aa_codes, three_letter_code = False):
     """Returns the amino acid code out of a string with 3 characters.
     By default the one letter code is returned. If three_letter_code is True, the three letter code will be returned"""
     code = code.upper()
+    if "N" in code:
+        position = code.index("N")
+        try:
+            all_aa = get_all_aa(code, position, aa_codes)
+            if all(i == all_aa[0] for i in all_aa):
+                return all_aa[0]
+            else:
+                return "X"
+        except:
+            return "X"
     try:
         if three_letter_code:
             return aa_codes[code][0]
         return aa_codes[code][1]
     except Exception:
-        return None
+        return "X"
         raise Exception(f"\"{code}\" has no corresponding amino acid")
 
 
@@ -158,10 +168,13 @@ def rna_to_protein(rna, aa_codes):
         triplet = rna[position:position+3]
         if len(triplet) == 3:
             try:
-                protein.append(aa_codes[triplet][1])
+                protein.append(get_code(triplet,aa_codes))
             except Exception:
-                protein.append("+")
-    return "".join(protein[:-1])
+                protein.append("X")
+    if protein[-1] == "stop":
+        return "".join(protein[:-1])
+    else:
+        return "".join(protein)
 
 
 def sort_first(element):
@@ -176,27 +189,38 @@ def get_genes_and_cds(gff_path, verbose=False):
         print("Starting to structure gff data!")
     gene_and_cds = {}
     mrna = {}
-    for gene in gff_data["gene"]:
-        gene = gene.strip()
-        gene = gene.split("\t")
-        gene_split = gene[8].split(";")
-        for i in gene_split:
-            if "ID=" == i[0:3]:
-                gene_id = i[3:]
-                if gene[6] == "+":
-                    gene_and_cds[gene_id] = [[], True, gene[0]]
+    if len(gff_data["mRNA"]) == 0:
+        for gene in gff_data["gene"]:
+            gene = gene.strip()
+            gene = gene.split("\t")
+            gene_split = gene[8].split(";")
+            for i in gene_split:
+                if "ID=" == i[0:3]:
+                    gene_id = i[3:]
+                    if gene[6] == "+":
+                        gene_and_cds[gene_id] = [[], True, gene[0]]
+                    else:
+                        gene_and_cds[gene_id] = [[], False, gene[0]]
+    else:
+        for rna in gff_data["mRNA"]:
+            rna = rna.strip()
+            rna  = rna.split("\t")
+            rna_split = rna[8].split(";")
+            rna_parent = ""
+            rna_id = ""
+            for i in rna_split:
+
+                # if i[0:7] == "Parent=":
+                #     rna_parent = i[7:]
+                if i[0:3] == "ID=":
+                    rna_id = i[3:]
+            if rna_id == "":
+                raise Exception(f"Did not find ID and/or Parent of mRNA \"{rna}\"")
+            else:
+                if rna[6] == "+":
+                    gene_and_cds[rna_id] = [[], True, rna[0]]
                 else:
-                    gene_and_cds[gene_id] = [[], False, gene[0]]
-    for rna in gff_data["mRNA"]:
-        rna = rna.strip()
-        rna  = rna.split("\t")
-        rna_split = rna[8].split(";")
-        for i in rna_split:
-            if i[0:7] == "Parent=":
-                rna_parent = i[7:]
-            if i[0:3] == "ID=":
-                rna_id = i[3:]
-        mrna[rna_id] = rna_parent
+                    gene_and_cds[rna_id] = [[], False, rna[0]]
     for cds in gff_data["CDS"]:
         cds = cds.strip()
         cds = cds.split("\t")
