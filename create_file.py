@@ -150,23 +150,27 @@ def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin=
         thread_gene_sequences.append({})
         for j in thread_gene_sequences_keys[i]:
             thread_gene_sequences[i][j] = gene_sequences.pop(j)
+    print(threads)
 
-
-    processes = [mp.Process(target=calculate_nucleotides, args=(thread_gene_sequences[x], aa_codes, gff_data ))
-                 for x in range(4)]
-    output = mp.Queue()
-    for p in processes:
-        p.start()
-    print(1)
-    for p in processes:
-        print("a")
-        p.join()
-    print("b")
-    for i in processes:
-        print("d")
-        output.get()
-    results = [output.get() for p in processes]
-    print("c")
+    pool = mp.Pool(processes=threads)
+    results = [pool.apply_async(calculate_nucleotides,args=(thread_gene_sequences[x], aa_codes, gff_data)) for x in range(threads)]
+    output = [p.get() for p in results]
+    a = 1
+    # processes = [mp.Process(target=calculate_nucleotides, args=(thread_gene_sequences[x], aa_codes, gff_data ))
+    #              for x in range(4)]
+    # output = mp.Queue()
+    # for p in processes:
+    #     p.start()
+    # print(1)
+    # for p in processes:
+    #     print("a")
+    #     p.join()
+    # print("b")
+    # for i in processes:
+    #     print("d")
+    #     output.get()
+    # results = [output.get() for p in processes]
+    # print("c")
     #
     # if write_tsv:
     #     with open(outfile_hr, "w") as outf:
