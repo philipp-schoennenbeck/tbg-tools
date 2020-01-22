@@ -1,13 +1,13 @@
 from helper_functions import *
 
-
-def load_file(path, binary=False):
-    data = {}
-    if not binary:
-        data = read_file(path)
-    if binary:
-        data, genes, scaffolds = read_binary_file(path)
-    return data
+#
+# def load_file(path, binary=False):
+#     data = {}
+#     if not binary:
+#         data = read_file(path)
+#     if binary:
+#         data, genes, scaffolds = read_binary_file(path)
+#     return data
 
 
 def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile="snps.tsv", rest_file=None, threads=1):
@@ -29,10 +29,7 @@ def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile=
     genes = {}
     if binary:
         try:
-            if threads > 1:
-                data, genes, scaffolds = read_binary_file(nucleotide_file, threads=threads)
-            else:
-                data, genes, scaffolds = read_binary_file_no_threads(nucleotide_file)
+            data, genes, scaffolds = read_binary_file(nucleotide_file, threads=threads)
         except Exception:
             raise Exception("Error with loading the tbg file!")
     else:

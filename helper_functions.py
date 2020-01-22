@@ -1,5 +1,6 @@
 import struct
 import multiprocessing as mp
+import os.path
 import datetime
 bases = ["A", "C", "G", "U"]
 
@@ -227,10 +228,16 @@ def get_genes_and_cds(gff_path, verbose=False):
         cds_split = cds[8].split(";")
         for i in cds_split:
             if i[0:7] == "Parent=":
-                if i[7:] in gene_and_cds:
+                try:
                     gene_and_cds[i[7:]][0].append([int(cds[3]), int(cds[4])])
-                elif i[7:] in mrna:
-                    gene_and_cds[mrna[i[7:]]][0].append([int(cds[3]), int(cds[4])])
+                except Exception:
+                    if verbose:
+                        print(f"Some CDS does not have a corresponding parent in the gff file, maybe it is a pseudogene\n{cds}")
+                    # raise Exception(f"Some CDS does not have a corresponding parent in the gff file\n{cds}")
+                # if i[7:] in gene_and_cds:
+                #     gene_and_cds[i[7:]][0].append([int(cds[3]), int(cds[4])])
+                # elif i[7:] in mrna:
+                #     gene_and_cds[mrna[i[7:]]][0].append([int(cds[3]), int(cds[4])])
     delete_list = []
     for key in gene_and_cds.keys():
         if gene_and_cds[key][0] == []:
@@ -320,7 +327,14 @@ def read_binary_lines(lines):
                 data[scaffold_and_position[0]][scaffold_and_position[1]] = rest
     return data
 
-def read_binary_file(path, threads=1):
+
+def read_binary_file(path, threads):
+    if threads > 1:
+        return read_binary_file_with_threads(path, threads)
+    else:
+        return read_binary_file_no_threads(path)
+
+def read_binary_file_with_threads(path, threads=1):
     """loads in a tbg and returns a dictionary with scaffolds as keys and dictionaries as values
     these nested dictionaries have the positions as keys, also returns a dictionary for genes and scaffold names,
     because they are still coded, can use multiple threads"""
@@ -364,7 +378,7 @@ def read_binary_file(path, threads=1):
     return data, genes, scaffolds
 
 
-def read_binary_file_no_threads(path, threads=1):
+def read_binary_file_no_threads(path):
     """loads in a tbg and returns a dictionary with scaffolds as keys and dictionaries as values
     these nested dictionaries have the positions as keys, also returns a dictionary for genes and scaffold names,
     because they are still coded"""
@@ -415,6 +429,21 @@ def decode_line(line, genes):
             line_translated[i] = "stop"
     return line_translated
 
+
+def create_file_names_and_files(number_of_files, begin=""):
+    counter = 0
+    filenames = []
+    for i in range(number_of_files):
+
+        while True:
+            filename = begin + str(counter)
+            if not os.path.isfile(filename):
+                open(filename, 'a').close()
+                filenames.append(filename)
+                counter += 1
+                break
+            counter += 1
+    return filenames
 
 if __name__ == "__main__":
     pass

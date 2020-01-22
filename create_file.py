@@ -1,10 +1,10 @@
 from helper_functions import *
 from datetime import datetime
-from time import sleep
+
 import multiprocessing as mp
 
 
-def write_binary(data, path, scaffolds, genes, scaffold_numbers, genes_numbers):
+def write_binary(data, path, scaffolds=None, genes=None, scaffold_numbers=None, genes_numbers=None, header=False):
     """binary file:
     int i(how many scaffolds are there),
     i ints (how long are the strings of the scaffolds),
@@ -13,36 +13,22 @@ def write_binary(data, path, scaffolds, genes, scaffold_numbers, genes_numbers):
     after that: format string: IIccccI?cccc
     --> scaffold number, position, base on ref, base in gene, position in triplet, amino acid, gene number,
         4ds, to A, to C, to G, to T"""
-
-    # genes = {}
-    # genes_list = []
-    # scaffolds = {}
-    # scaffolds_list = []
-    # scaffolds_counter = 0
-    # genes_counter = 0
-    # for thread in data:
-    #     for line in thread:
-    #         line = line.strip()
-    #         data_split = line.strip().split("\t")
-    #         if data_split[0] not in scaffolds:
-    #             scaffolds[data_split[0]] = scaffolds_counter
-    #             scaffolds_counter += 1
-    #             scaffolds_list.append(data_split[0])
-    #         if data_split[6] not in genes:
-    #             genes[data_split[6]] = genes_counter
-    #             genes_counter += 1
-    #             genes_list.append(data_split[6])
     fmt = format_string()
-    with open(path, "wb") as f:
-        f.write(struct.pack("I", len(genes)))
-        f.write(struct.pack("I" * len(genes), *[len(genes_numbers[i]) for i in range(len(genes))]))
-        for gene in range(len(genes)):
-            f.write(struct.pack("c" * len(genes_numbers[gene]), *[bytes(i, "utf-8") for i in genes_numbers[gene]]))
+    if not header:
+        writing_mode = "ab"
+    else:
+        writing_mode = "wb"
+    with open(path, writing_mode) as f:
+        if header:
+            f.write(struct.pack("I", len(genes)))
+            f.write(struct.pack("I" * len(genes), *[len(genes_numbers[i]) for i in range(len(genes))]))
+            for gene in range(len(genes)):
+                f.write(struct.pack("c" * len(genes_numbers[gene]), *[bytes(i, "utf-8") for i in genes_numbers[gene]]))
 
-        f.write(struct.pack("I", len(scaffolds)))
-        f.write(struct.pack("I" * len(scaffolds), *[len(scaffold_numbers[i]) for i in range(len(scaffolds))]))
-        for scaffold in range(len(scaffolds)):
-            f.write(struct.pack("c" * len(scaffold_numbers[scaffold]), *[bytes(i, "utf-8") for i in scaffold_numbers[scaffold]]))
+            f.write(struct.pack("I", len(scaffolds)))
+            f.write(struct.pack("I" * len(scaffolds), *[len(scaffold_numbers[i]) for i in range(len(scaffolds))]))
+            for scaffold in range(len(scaffolds)):
+                f.write(struct.pack("c" * len(scaffold_numbers[scaffold]), *[bytes(i, "utf-8") for i in scaffold_numbers[scaffold]]))
         for thread in data:
 
             for line in thread:
@@ -50,11 +36,8 @@ def write_binary(data, path, scaffolds, genes, scaffold_numbers, genes_numbers):
                 for i in [5, 8, 9, 10, 11]:
                     if data_split[i] == "stop":
                         data_split[i] = "-"
-                # data_split[0] = scaffolds[data_split[0]]
                 data_split[0] = int(data_split[0])
                 data_split[1] = int(data_split[1])
-                # data_split[4] = int(data_split[4])
-                #data_split[6] = genes[data_split[6]]
                 data_split[6] = int(data_split[6])
                 if data_split[7] == "True":
                     data_split[7] = True
@@ -76,7 +59,19 @@ def write_binary(data, path, scaffolds, genes, scaffold_numbers, genes_numbers):
 
     f.close()
 
-def calculate_nucleotides(gene_sequences, aa_codes, gff_data, verbose, scaffolds, genes ):
+def write_hr(data, path, number_to_scaffold, number_to_gene, verbose):
+
+    with open(path, "a") as outf:
+        for j in data:
+            dummystring = j.split("\t")
+            dummystring[0] = number_to_scaffold[int(dummystring[0])]
+            dummystring[6] = number_to_gene[int(dummystring[6])]
+            outf.write("\t".join(dummystring))
+    outf.close()
+
+
+def calculate_nucleotides(gene_sequences, aa_codes, gff_data, verbose, scaffolds_to_number, number_to_scaffold,
+                          genes_to_number, number_to_gene, filename, write_tsv_path, low_ram ):
     """nucleotide function for the multiprocessing"""
     outlist = []
     counter = 0
@@ -90,7 +85,14 @@ def calculate_nucleotides(gene_sequences, aa_codes, gff_data, verbose, scaffolds
                 printer += 0.05
         forward = gff_data[gene][1]
         for nucleotide in range(len(gene_sequences[gene])):
-            scaff_id = scaffolds[gff_data[gene][2]]
+            if len(outlist) > 50000:
+                if low_ram :
+                    write_binary([outlist], filename, header=False)
+                    if write_tsv_path is not None:
+                        write_hr(outlist, write_tsv_path, number_to_scaffold, number_to_gene, verbose)
+                    outlist = []
+
+            scaff_id = scaffolds_to_number[gff_data[gene][2]]
             position = get_position_in_scaffold(gff_data[gene][0], nucleotide)
 
             triplett, position_in_triplett = get_current_triplett(gene_sequences[gene], nucleotide, forward)
@@ -104,7 +106,7 @@ def calculate_nucleotides(gene_sequences, aa_codes, gff_data, verbose, scaffolds
             amino_acid = get_code(triplett, aa_codes)
             if amino_acid is None:
                 amino_acid = "+"
-            gene_id = genes[gene]
+            gene_id = genes_to_number[gene]
 
             amino_acids = get_all_aa(triplett, position_in_triplett, aa_codes)
 
@@ -112,35 +114,46 @@ def calculate_nucleotides(gene_sequences, aa_codes, gff_data, verbose, scaffolds
             A, C, G, T = amino_acids
             outlist.append("\t".join((str(i) for i in [scaff_id, position, base, base_in_gene,
                                                        position_in_triplett +1 , amino_acid, gene_id,
-                                                       four_ds, A, C, G, T, "\n"])))
+                                                       four_ds, A, T, C, G, "\n"])))
+
+    if verbose:
+        print("100% done")
+    if verbose and not low_ram:
+        print("Writing binary file(s).")
+    write_binary([outlist], filename, header=False)
+    if write_tsv_path is not None:
+        if verbose and not low_ram:
+            print("Writing human readable file(s).")
+        write_hr(outlist, write_tsv_path, number_to_scaffold, number_to_gene, verbose)
 
 
-    return outlist
 
 
-
-def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin="defailt.bin", verbose=False,
-                    create_binary=False, write_tsv=True, aa_code="default", threads=1, protein=None):
+def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin="default.bin", verbose=False,
+                    create_binary=True, write_tsv=False, aa_code="default", threads=1, protein=None, low_ram=False):
     """Loading in all files and creating the tbg file and optionally a protein file and a human readable file"""
-    time = datetime.now()
     #Load in all the files and data
     aa_codes = load_aa_codes(aa_code)
+
     try:
         gff_data = get_genes_and_cds(gff_file, verbose=verbose)
     except:
         raise Exception("Having trouble with loading in the data from the gff file.")
+
     try:
         fasta_data = load_fasta(fasta_file, seperator=" ", verbose=verbose)
     except:
         raise Exception("Having Trouble with loading in the data from the fasta file")
-    gene_sequences = {}
 
+    # Variables
+    gene_sequences = {}
     gene_to_number = {}
     number_to_gene = {}
     scaffold_to_number = {}
     number_to_scaffold = {}
     gene_counter = 0
     scaffold_counter = 0
+
     # get the sequence of every gene and filling dicts
     for gene in gff_data.keys():
         sequence = get_sequence_from_fasta(fasta_data[gff_data[gene][2]], gff_data[gene][0])
@@ -157,15 +170,14 @@ def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin=
     write_gene = False
 
     # writing the protein file
-    if protein is not None:
+    write_gene = False
+    if protein is not None or write_gene is not None:
         if verbose:
             print("Starting to write protein_file")
         with open(protein, "w") as f:
             if write_gene:
                 g = open("E_coli_genes.fa", "w")
             for gene in gene_sequences.keys():
-                if gene == "maker-scaffold_186_motu5-augustus-gene-0.120-mRNA-1":
-                    a = 1
                 f.write(">" + gene + "\n")
                 if write_gene:
                     g.write(">" + gene + "\n")
@@ -180,8 +192,15 @@ def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin=
                         g.write(get_other_strand(gene_sequences[gene]) + "\n")
 
         f.close()
-    #todo: intermediate files for pcs with low ram
-    return
+
+
+    # Creating new temporary files and getting their names
+    filenames = create_file_names_and_files(threads+1, begin="tbg_temp_file_")
+    if write_tsv:
+        filenames_hr = create_file_names_and_files(threads, begin="tbgt_temp_tsv_file_")
+    else:
+        filenames_hr = [None for _ in range(threads)]
+
     # Distributing the genes on different dictionaries for the multiprocessing
     thread_gene_sequences_keys = [[]]
     for i in gene_sequences.keys():
@@ -197,34 +216,48 @@ def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin=
     verboses = [False for i in range(threads)]
     verboses[0] = verbose
 
-    #Calling the calculation for every nucleotide
+    # Calling the calculation for every nucleotide
     if verbose:
         print("Calculating the nucleotides (this may take a while)!")
     pool = mp.Pool(processes=len(thread_gene_sequences))
     results = [pool.apply_async(calculate_nucleotides, args=(thread_gene_sequences[x], aa_codes, gff_data, verboses[x],
-                                                             scaffold_to_number, gene_to_number))
+                                                             scaffold_to_number, number_to_scaffold, gene_to_number,
+                                                             number_to_gene, filenames[x+1], filenames_hr[x], low_ram))
                                                             for x in range(len(thread_gene_sequences))]
-    output = [p.get() for p in results]
-    if verbose:
-        print("100% done")
 
-    #Output
-    if create_binary:
-        if verbose:
-            print("Writing binary file")
-        write_binary(output, outfile_bin, scaffold_to_number, gene_to_number, number_to_scaffold, number_to_gene)
+    # Waiting for the mp output
+    output = [p.get() for p in results]
+
+    # Writing the header temp file
+    write_binary([], filenames[0], scaffold_to_number, gene_to_number, number_to_scaffold, number_to_gene,
+                 header=True)
+
+    # Combining all temp files and removing the temp files
+    if verbose:
+        print("Combining temp files.")
+    with open(outfile_bin, 'wb') as outfile:
+        for filename in filenames:
+            if verbose:
+                print("\t" + filename )
+            with open(filename, 'rb') as infile:
+                for line in infile:
+                    outfile.write(line)
+            os.remove(filename)
+
     if write_tsv:
-        if verbose:
-            print("Writing human readable file")
-        with open(outfile_hr, "w") as outf:
-            for i in output:
-                for j in i:
-                    dummystring = j.split("\t")
-                    dummystring[0] = number_to_scaffold[int(dummystring[0])]
-                    dummystring[6] = number_to_gene[int(dummystring[6])]
-                    outf.write("\t".join(dummystring))
-        outf.close()
-    #print((datetime.now()-time).total_seconds())
+        with open(outfile_hr, 'w') as outfile:
+            for filename in filenames_hr:
+                if verbose:
+                    print("\t" + filename + "\n")
+                with open(filename, 'r') as infile:
+                    for line in infile:
+                        outfile.write(line)
+                os.remove(filename)
+
+# create -g radix_whole.gff -f radix_whole.fa -t 4 -p radix_whole_proteins.fa -v -o radix_whole.tbg -w
+# create -g E_coli.gff -f E_coli.fa -t 4 -p E_coli_proteins.fa -v -o E_coli.tbg -w
+
+
 
 
 
