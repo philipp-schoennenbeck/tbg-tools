@@ -1,5 +1,6 @@
 import create_file
 import searching
+import pop_gen
 import argparse
 import sys
 import os.path
@@ -104,12 +105,19 @@ if __name__ == "__main__":
                 raise FileNotFoundError(f"tbg file was not found (\"{args.tbg_file}\")")
             create_file.write_human_readable(args.tbg_file, path_hr=args.outfile)
         elif sys.argv[1] == "pop_gen":
-            parser.description = "Converts the tbg file to a human readable tsv file." \
-                                 " These files can get very big"
+            parser.description = "Some tools to work with population genetic data files"
             parser.add_argument("-n", "--tbg_file", help="path to the tbg file.", required=True)
             parser.add_argument("-o", "--outfile", help="path the to human readable file, default ist the tbg"
                                                         " file with .tsv")
             parser.add_argument("-v", "--verbose", help="increases verbosity", action="store_true", default=False)
+            parser.add_argument("-s", "--sync_file", help="Path to a sync file")
+            args = parser.parse_args(sys.argv[2:])
+            if not os.path.isfile(args.tbg_file):
+                raise FileNotFoundError(f"tbg file was not found (\"{args.tbg_file}\")")
+            if not os.path.isfile(args.sync_file):
+                raise FileNotFoundError(f"sync file was not found (\"{args.sync_file}\")")
+            if args.sync_file is not None:
+                pop_gen.analyze_sync_file(args.tbg_file, args.sync_file, args.outfile, args.rest)
         else:
             args = parser.parse_args()
             if args.version:
