@@ -103,6 +103,13 @@ if __name__ == "__main__":
             if not os.path.isfile(args.tbg_file):
                 raise FileNotFoundError(f"tbg file was not found (\"{args.tbg_file}\")")
             create_file.write_human_readable(args.tbg_file, path_hr=args.outfile)
+        elif sys.argv[1] == "pop_gen":
+            parser.description = "Converts the tbg file to a human readable tsv file." \
+                                 " These files can get very big"
+            parser.add_argument("-n", "--tbg_file", help="path to the tbg file.", required=True)
+            parser.add_argument("-o", "--outfile", help="path the to human readable file, default ist the tbg"
+                                                        " file with .tsv")
+            parser.add_argument("-v", "--verbose", help="increases verbosity", action="store_true", default=False)
         else:
             args = parser.parse_args()
             if args.version:
