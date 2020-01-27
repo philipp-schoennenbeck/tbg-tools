@@ -1,6 +1,6 @@
 from helper_functions import *
-
-#
+from copy import deepcopy
+import create_file
 # def load_file(path, binary=False):
 #     data = {}
 #     if not binary:
@@ -9,9 +9,8 @@ from helper_functions import *
 #         data, genes, scaffolds = read_binary_file(path)
 #     return data
 
-
-def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile="snps.tsv", rest_file=None, threads=1):
-    # load in all the snps
+def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile="snps.tsv", rest_file=None, threads=1,
+               low_ram=False):
     if snp_file is not None:
         snps = []
         with open(snp_file, "r") as f:
@@ -20,9 +19,25 @@ def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile=
             for i in range(len(file)):
 
                 dummy = file[i].split("\t")
-                if len(file[i].strip("\t\n ")) == 0 or len(dummy) != 2:
+                if len(file[i].strip("\t\n ")) == 0:
                     continue
-                snps.append([dummy[0], int(dummy[1])])
+                if len(dummy) == 2:
+                    snps.append((dummy[0], int(dummy[1])))
+                elif len(dummy) == 3:
+                    for j in range(int(dummy[1]), int(dummy[2])):
+                        snps.append((dummy[0], j))
+
+    if low_ram:
+        rest = create_file.write_human_readable(nucleotide_file, outfile, snps)
+    else:
+        rest = check_snps_normal(nucleotide_file, snps, binary, outfile, rest_file, threads)
+    if rest_file is not None:
+        r = open(rest_file, "w")
+        for snp in rest:
+            r.write(snp)
+
+    pass
+def check_snps_normal(nucleotide_file, snps=None, binary=False, outfile="snps.tsv", rest_file=None, threads=1):
 
     # load in the tbg file
     scaffolds = {}
@@ -52,7 +67,7 @@ def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile=
         if scaffold in data:
             if snp[1] in data[scaffold]:
                 for line in data[scaffold][snp[1]]:
-                    snp_dummy = snp
+                    snp_dummy = list(snp)
                     if binary:
                         snp_information = decode_line(line, genes)
                         snp_dummy.extend(snp_information)
@@ -75,14 +90,12 @@ def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile=
                 rest.append(f"{snp[0]}\t{snp[1]}\n")
 
     # output
-    if rest_file is not None:
-        r = open(rest_file, "w")
-        for snp in rest:
-            r.write(snp)
+
     f = open(outfile, "w")
     for snp in real_snps:
         f.write(snp)
-
+    f.close()
+    return rest
 
 def check_gene(tbg_file, genes_to_find, outfile, verbose, rest):
     if verbose:
