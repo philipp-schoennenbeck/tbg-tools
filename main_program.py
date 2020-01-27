@@ -83,11 +83,11 @@ if __name__ == "__main__":
                 if not os.path.isfile(args.bed):
                     raise FileNotFoundError(f"bed file was not found (\"{args.bed}\")")
                 searching.check_snps(args.tbg_file, snp_file=args.bed, binary=True, outfile=args.outfile,
-                                     rest_file=args.rest, threads=args.threads)
+                                     rest_file=args.rest, threads=args.threads, low_ram=args.low_ram)
             elif args.snps:
                 snps = [i.split(",") for i in args.snps]
                 searching.check_snps(args.tbg_file, snps=snps, binary=True, outfile=args.outfile,
-                                     rest_file=args.rest, threads=args.threads)
+                                     rest_file=args.rest, threads=args.threads, low_ram=args.low_ram)
             elif args.genes:
                 searching.check_gene(args.tbg_file, args.genes, args.outfile, args.verbose, args.rest)
             elif args.scaffolds:
