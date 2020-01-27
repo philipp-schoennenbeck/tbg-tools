@@ -2,7 +2,7 @@ from helper_functions import *
 
 def analyze_sync_file(nucleotide_file, sync_file, output, rest, threads):
     sync_data = {}
-    order = "ATCGND"
+
     data, genes, scaffolds = read_binary_file(nucleotide_file, threads=threads)
     with open(sync_file, "r") as sync:
         for line in sync:

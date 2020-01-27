@@ -1,17 +1,13 @@
 from helper_functions import *
 from copy import deepcopy
 import create_file
-# def load_file(path, binary=False):
-#     data = {}
-#     if not binary:
-#         data = read_file(path)
-#     if binary:
-#         data, genes, scaffolds = read_binary_file(path)
-#     return data
+
 
 def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile="snps.tsv", rest_file=None, threads=1,
-               low_ram=False):
+               low_ram=False, verbose=False):
     if snp_file is not None:
+        if verbose:
+            print("Load in snp_file!")
         snps = []
         with open(snp_file, "r") as f:
 
@@ -30,18 +26,20 @@ def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile=
     if low_ram:
         rest = create_file.write_human_readable(nucleotide_file, outfile, snps)
     else:
-        rest = check_snps_normal(nucleotide_file, snps, binary, outfile, rest_file, threads)
+        rest = check_snps_normal(nucleotide_file, snps, binary, outfile, rest_file, threads, verbose=verbose)
     if rest_file is not None:
         r = open(rest_file, "w")
         for snp in rest:
             r.write(snp)
 
     pass
-def check_snps_normal(nucleotide_file, snps=None, binary=False, outfile="snps.tsv", rest_file=None, threads=1):
+def check_snps_normal(nucleotide_file, snps=None, binary=False, outfile="snps.tsv", rest_file=None, threads=1, verbose=False):
 
     # load in the tbg file
     scaffolds = {}
     genes = {}
+    if verbose:
+        print("Starting to load the tbg file!")
     if binary:
         try:
             data, genes, scaffolds = read_binary_file(nucleotide_file, threads=threads)
@@ -56,6 +54,8 @@ def check_snps_normal(nucleotide_file, snps=None, binary=False, outfile="snps.ts
     # check for every SNP if it is in the tbg file
     real_snps = []
     rest = []
+    if verbose:
+        print("Looking for SNPs in the tbg file!")
     for snp in snps:
         if binary:
             if snp[0] in scaffolds:
@@ -90,7 +90,8 @@ def check_snps_normal(nucleotide_file, snps=None, binary=False, outfile="snps.ts
                 rest.append(f"{snp[0]}\t{snp[1]}\n")
 
     # output
-
+    if verbose:
+        print("Writing the result...")
     f = open(outfile, "w")
     for snp in real_snps:
         f.write(snp)
@@ -129,7 +130,8 @@ def check_gene(tbg_file, genes_to_find, outfile, verbose, rest):
                     print(f"{gene} was not found!")
         if rest:
             rest_file.close()
-
+        if verbose:
+            print("Writing the result file...")
         fmt_size_before_gene = byte_size_of_fmt("IIcccc")
         with open(outfile, "w") as outfile:
             while True:
@@ -186,7 +188,8 @@ def check_scaffold(tbg_file, scaffolds_to_find, outfile, verbose, rest):
                     print(f"{scaffold} was not found!")
         if rest:
             rest_file.close()
-
+        if verbose:
+            print("Writing the result file...")
         with open(outfile, "w") as outfile:
             while True:
                 line = f.read(byte_size_of_fmt(format_string()))
