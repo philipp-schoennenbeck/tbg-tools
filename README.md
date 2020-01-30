@@ -1,7 +1,10 @@
-#tbg 
+# tbg 
+
 The purpose of this program is to quickly look up positions on scaffolds and get some further informations about these positions.
 It is not in its finished version and there are surely still some bugs to be found. 
-###Usage:
+
+### Usage:
+
 python3 main_program.py --help
 
 -> shows the different options of the program
@@ -18,7 +21,8 @@ The program itself uses the binary tbg files
 
 
 
-####search:
+#### search:
+
 e.g. :  python3 main_program.py search -n example.tbg -b snps.tsv -o positions_found.tsv -t 4 -w
 
 Search for positions within the tbg file. When using a bed/tsv file for positions use this pattern:
@@ -34,17 +38,17 @@ The result file is a small portion of the human readable tsv file which only con
 If some positions are not found within a gene, they can be written to a rest file (option -r)
 
 
-####convert:
+#### convert:
 e.g. : python3 main_program.py convert -n example.tbg -o example.tsv
 
 Converts tbg files to human readable tsv files
 
-####pop_gen:
+#### pop_gen:
 
 still working on that
 
 
-##human readable file columns:
+## human readable file columns:
 ScaffID pos base_in_reference   coding_base triplett_position   coded_AA    geneID  4ds >A  >T  >C  >G 
 
 \>A, \>T , \>C, \>G : Which amino acid will be coded if the nucleotide changes to this 
