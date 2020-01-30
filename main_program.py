@@ -60,9 +60,10 @@ if __name__ == "__main__":
                                         aa_code=args.amino_acid_codes, threads=args.threads, protein=args.protein_file,
                                         low_ram=args.low_ram)
         elif sys.argv[1] == "search":
-            parser.add_argument("-f", "--tbg_file", help="path to the tbg file created with \"create\"", required=True)
+            parser.add_argument("-n", "--tbg_file", help="path to the tbg file created with \"create\"", required=True)
             snp_group = parser.add_mutually_exclusive_group(required=True)
-            snp_group.add_argument("-b", "--bed", help="path to tab seperated bed file with the SNPs, \"scaffold  position\"")
+            snp_group.add_argument("-b", "--bed", help="path to tab seperated bed file with the SNPs, \"scaffold  position\", "
+                                                       "it is also possible to search entire regions with \"scaffold  start   end\"")
             snp_group.add_argument("-s", "--snps", help="list of SNPs separated by space e.g. \"scaffold1,position1"
                                                      "scaffold2,position2 \" ", nargs="+")
             parser.add_argument("-o", "--outfile", help="path to the resulted outfile,"

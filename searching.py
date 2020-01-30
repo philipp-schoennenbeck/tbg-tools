@@ -24,6 +24,8 @@ def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile=
                         snps.append((dummy[0], j))
 
     if low_ram:
+        if verbose:
+            print("Searching in tbg file for SNPs...")
         rest = create_file.write_human_readable(nucleotide_file, outfile, snps)
     else:
         rest = check_snps_normal(nucleotide_file, snps, binary, outfile, rest_file, threads, verbose=verbose)
