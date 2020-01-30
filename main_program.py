@@ -8,7 +8,7 @@ from datetime import datetime
 
 
 if __name__ == "__main__":
-    time = datetime.now()
+    # time = datetime.now()
     description = "This is a program to work with tbg files.\n" \
                   "tbg files are files to fast and easily find out if specific positions on scaffolds are within a gene" \
                   "or not and if they are within a gene, you get additional information about this position\n" \
@@ -127,4 +127,4 @@ if __name__ == "__main__":
                 parser.print_help()
     else:
         parser.print_help()
-    print((datetime.now() - time).total_seconds())
+    # print((datetime.now() - time).total_seconds())
