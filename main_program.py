@@ -112,13 +112,16 @@ if __name__ == "__main__":
                                                         " file with .tsv")
             parser.add_argument("-v", "--verbose", help="increases verbosity", action="store_true", default=False)
             parser.add_argument("-s", "--sync_file", help="Path to a sync file")
+            parser.add_argument("-sf", "--stats_file", help="Path to an optioal stats file to write")
+            parser.add_argument("-t", "--threads",help="number of threads to be used", default=1, type=int)
+            parser.add_argument("-r", "--rest", help="Path to a potential file with not found positions")
             args = parser.parse_args(sys.argv[2:])
             if not os.path.isfile(args.tbg_file):
                 raise FileNotFoundError(f"tbg file was not found (\"{args.tbg_file}\")")
             if not os.path.isfile(args.sync_file):
                 raise FileNotFoundError(f"sync file was not found (\"{args.sync_file}\")")
             if args.sync_file is not None:
-                pop_gen.analyze_sync_file(args.tbg_file, args.sync_file, args.outfile, args.rest)
+                pop_gen.analyze_sync_file(args.tbg_file, args.sync_file, args.outfile, args.rest, threads=args.threads, stat_file=args.stats_file)
         else:
             args = parser.parse_args()
             if args.version:
