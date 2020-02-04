@@ -1,6 +1,6 @@
 from helper_functions import *
 
-def analyze_sync_file(nucleotide_file, sync_file, output, rest, threads):
+def analyze_sync_file(nucleotide_file, sync_file, output, rest, threads, statistic_file=None):
     sync_data = {}
 
     data, genes, scaffolds = read_binary_file(nucleotide_file, threads=threads)
@@ -9,7 +9,8 @@ def analyze_sync_file(nucleotide_file, sync_file, output, rest, threads):
             line = line.strip()
             columns = line.split("\t")
             sync_data[(columns[0], int(columns[1]), columns[2])] = columns[3:]
-
+    if statistic_file is not None:
+        stat_output = open(statistic_file, "w")
     outfile = open(output, "w")
     for keys in sync_data.keys():
         if scaffolds[keys[0]] in data:
