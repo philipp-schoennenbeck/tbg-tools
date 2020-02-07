@@ -26,79 +26,99 @@ def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile=
     if low_ram:
         if verbose:
             print("Searching in tbg file for SNPs...")
-        rest = create_file.write_human_readable(nucleotide_file, outfile, snps)
+        rest,found = check_snps_low_ram(nucleotide_file, snps, verbose=verbose)
     else:
-        rest = check_snps_normal(nucleotide_file, snps, binary, outfile, rest_file, threads, verbose=verbose)
+        rest,found = check_snps_normal(nucleotide_file, snps, threads, verbose=verbose)
+
+    with open(outfile, "w") as outf:
+        for keys in found.keys():
+            for line in found[keys]:
+                line = "\t".join([str(i) for i in keys]) + "\t" + "\t".join([str(i) for i in line])
+                outf.write(line)
+
     if rest_file is not None:
         r = open(rest_file, "w")
         for snp in rest:
             r.write(snp)
 
     pass
-def check_snps_normal(nucleotide_file, snps=None, binary=False, outfile="snps.tsv", rest_file=None, threads=1, verbose=False):
+def check_snps_normal(nucleotide_file, snps=None, threads=1, verbose=False):
 
-    # load in the tbg file
-    scaffolds = {}
-    genes = {}
+    snps_found = {}
     if verbose:
         print("Starting to load the tbg file!")
-    if binary:
-        try:
-            data, genes, scaffolds = read_binary_file(nucleotide_file, threads=threads)
-        except Exception:
-            raise Exception("Error with loading the tbg file!")
-    else:
-        try:
-            data = read_file(nucleotide_file)
-        except Exception:
-            raise Exception("Error with loading in the hr file!")
+
+    try:
+        data, genes, scaffolds = read_binary_file(nucleotide_file, threads=threads)
+    except Exception:
+        raise Exception("Error with loading the tbg file!")
+
 
     # check for every SNP if it is in the tbg file
-    real_snps = []
     rest = []
     if verbose:
         print("Looking for SNPs in the tbg file!")
     for snp in snps:
-        if binary:
-            if snp[0] in scaffolds:
-                scaffold = scaffolds[snp[0]]
-            else:
-                scaffold = None
+
+        if snp[0] in scaffolds:
+            scaffold = scaffolds[snp[0]]
         else:
-            scaffold = snp[0]
+            scaffold = None
+
         if scaffold in data:
             if snp[1] in data[scaffold]:
+                snps_found[(snp[0], snp[1])] = []
                 for line in data[scaffold][snp[1]]:
-                    snp_dummy = list(snp)
-                    if binary:
-                        snp_information = decode_line(line, genes)
-                        snp_dummy.extend(snp_information)
-                        snp_dummy.append("\n")
-                        snp_dummy = "\t".join([str(i) for i in snp_dummy])
-
-                    else:
-
-                        snp_information = line
-                        snp_dummy.extend(snp_information)
-                        snp_dummy.append("\n")
-                        snp_dummy = "\t".join([str(i) for i in snp_dummy])
-
-                    real_snps.append(snp_dummy)
+                    snp_information = decode_line(line, genes)
+                    snp_information.append("\n")
+                    snps_found[(snp[0], snp[1])].append(snp_information)
             else:
-                if rest_file is not None:
-                    rest.append(f"{snp[0]}\t{snp[1]}\n")
-        else:
-            if rest_file is not None:
                 rest.append(f"{snp[0]}\t{snp[1]}\n")
+        else:
+            rest.append(f"{snp[0]}\t{snp[1]}\n")
+    return (rest, snps_found)
 
-    # output
-    if verbose:
-        print("Writing the result...")
-    f = open(outfile, "w")
-    for snp in real_snps:
-        f.write(snp)
-    f.close()
-    return rest
+def check_snps_low_ram(nucleotide_file, snps=None, verbose=False):
+
+    snps_dic = {i:None for i in snps}
+
+
+    with open(nucleotide_file, "rb") as f:
+        genes = {}
+        number_of_genes = struct.unpack("I", f.read(4))[0]
+        genes_str_length = struct.unpack("I" * number_of_genes, f.read(4 * number_of_genes))
+        for i in range(number_of_genes):
+            gene_name = struct.unpack("c" * genes_str_length[i], f.read(genes_str_length[i]))
+            gene_name = "".join([str(letter, "utf-8") for letter in gene_name])
+            genes[i] = gene_name
+        scaffolds = {}
+        number_of_scaffolds = struct.unpack("I", f.read(4))[0]
+        scaffolds_str_length = struct.unpack("I" * number_of_scaffolds, f.read(4 * number_of_scaffolds))
+        for i in range(number_of_scaffolds):
+            scaffold_name = struct.unpack("c" * scaffolds_str_length[i], f.read(scaffolds_str_length[i]))
+            scaffold_name = "".join([str(letter, "utf-8") for letter in scaffold_name])
+            scaffolds[i] = scaffold_name
+        while True:
+            scaffold_and_position = f.read(8)
+            rest = f.read(byte_size_of_fmt(format_string()) - 8)
+            if not scaffold_and_position or not rest:
+                # EOF
+                break
+            scaffold_and_position = struct.unpack("II", scaffold_and_position)
+            rest = [str(i) for i in  decode_line(rest, genes)]
+            if (scaffolds[scaffold_and_position[0]], scaffold_and_position[1]) in snps_dic:
+                rest.append("\n")
+                snps_dic[scaffolds[scaffold_and_position[0]], scaffold_and_position[1]] = rest
+
+    rest=[]
+    for i in snps_dic.keys():
+        if snps_dic[i] is None:
+            rest.append(f"{i[0]}\t{i[1]}\n")
+    return (rest,snps)
+
+
+
+
 
 def check_gene(tbg_file, genes_to_find, outfile, verbose, rest):
     if verbose:
