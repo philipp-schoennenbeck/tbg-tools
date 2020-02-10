@@ -263,10 +263,9 @@ def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin=
 
 
 
-def write_human_readable(path_bin, path_hr=None, snps=None):
+def write_human_readable(path_bin, path_hr=None):
     """loads in a tbg file and converts it to a human readable file"""
-    if snps is not None:
-        snps_dic = {i:False for i in snps}
+
     if path_hr is None:
         path_hr = path_bin[:-3] + "tsv"
     with open(path_hr, "w") as outf:
@@ -293,16 +292,16 @@ def write_human_readable(path_bin, path_hr=None, snps=None):
                     break
                 scaffold_and_position = struct.unpack("II", scaffold_and_position)
                 rest = [str(i) for i in  decode_line(rest, genes)]
-                if snps is None or (scaffolds[scaffold_and_position[0]], scaffold_and_position[1]) in snps_dic:
-                    outf.write(scaffolds[scaffold_and_position[0]] + "\t" + str(scaffold_and_position[1]) + "\t" +
+
+                outf.write(scaffolds[scaffold_and_position[0]] + "\t" + str(scaffold_and_position[1]) + "\t" +
                                "\t".join(rest) + "\n")
-                    snps_dic[scaffolds[scaffold_and_position[0]], scaffold_and_position[1]] = True
-    if snps is not None:
-        snps = []
-        for i in snps_dic.keys():
-            if not snps_dic[i]:
-                snps.append(f"{i[0]}\t{i[1]}\n")
-        return snps
+
+    # if snps is not None:
+    #     snps = []
+    #     for i in snps_dic.keys():
+    #         if not snps_dic[i]:
+    #             snps.append(f"{i[0]}\t{i[1]}\n")
+    #     return snps
     return None
 
 if __name__ == "__main__":
