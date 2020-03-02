@@ -2,13 +2,15 @@ import struct
 import multiprocessing as mp
 import os.path
 import datetime
+import os
+import sys
 bases = ["A", "C", "G", "U"]
 
 
 def load_aa_codes(code="default"):
     """Loads in the aa_codes.txt file and finds the right codes"""
     aa_code = {}
-    with open("aa_codes.txt", "r") as f:
+    with open(os.path.join(sys.path[0], "aa_codes.txt"), "r") as f:
         found_code = False
         for line in f:
             line = line.strip()
