@@ -17,8 +17,7 @@ if __name__ == "__main__":
                   "convert\tconvert the tbg file to a human readable file"
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("-#", "--version", help="print program version", action="store_true")
-    pwd = sys.argv[0].split("/")
-    pwd = pwd[:-1]
+
     if len(sys.argv) >= 2:
         if sys.argv[1] == "create":
             parser.add_argument("-f", "--fasta", help="path to fasta file", required=True)
