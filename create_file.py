@@ -171,7 +171,7 @@ def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin=
     write_gene = False
 
     # writing the protein file
-    write_gene = False
+    write_gene = None
     if protein is not None or write_gene is not None:
         if verbose:
             print("Starting to write protein_file")
