@@ -186,6 +186,7 @@ def get_genes_and_cds(gff_path, verbose=False):
     """loads a gff file and finds all the genes, CDS and mRNA and returns the genes with their corresponding CDS"""
 
     gff_data = load_gff(gff_path, ["gene","CDS", "mRNA"],verbose=verbose)
+
     if verbose:
         print("Starting to structure gff data!")
     gene_and_cds = {}

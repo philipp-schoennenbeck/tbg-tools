@@ -140,6 +140,7 @@ def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin=
     except:
         raise Exception("Having trouble with loading in the data from the gff file.")
 
+
     try:
         fasta_data = load_fasta(fasta_file, seperator=" ", verbose=verbose)
     except:
@@ -197,7 +198,7 @@ def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin=
     # Creating new temporary files and getting their names
     filenames = create_file_names_and_files(threads+1, begin="tbg_temp_file_")
     if write_tsv:
-        filenames_hr = create_file_names_and_files(threads, begin="tbgt_temp_tsv_file_")
+        filenames_hr = create_file_names_and_files(threads, begin="tbg_temp_tsv_file_")
     else:
         filenames_hr = [None for _ in range(threads)]
 
