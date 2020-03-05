@@ -197,7 +197,7 @@ def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin=
     # Creating new temporary files and getting their names
     filenames = create_file_names_and_files(threads+1, begin="tbg_temp_file_")
     if write_tsv:
-        filenames_hr = create_file_names_and_files(threads, begin="tbgt_temp_tsv_file_")
+        filenames_hr = create_file_names_and_files(threads, begin="tbg_temp_tsv_file_")
     else:
         filenames_hr = [None for _ in range(threads)]
 
@@ -248,7 +248,7 @@ def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin=
         with open(outfile_hr, 'w') as outfile:
             for filename in filenames_hr:
                 if verbose:
-                    print("\t" + filename + "\n")
+                    print("\t" + filename)
                 with open(filename, 'r') as infile:
                     for line in infile:
                         outfile.write(line)
