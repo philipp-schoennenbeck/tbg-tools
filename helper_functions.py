@@ -62,7 +62,7 @@ def get_all_aa(code, position, aa_codes, three_letter_code=False):
         return amino_acids
     except Exception:
         raise Exception(f"Cannot find all possible outcomes when changing one base. (Base: {code},"
-                        f" position: {position})")
+                        f" position: {position}, tripplet: {code})")
 
 
 def get_other_strand(strand, rna=True):
@@ -121,6 +121,8 @@ def load_fasta(path, seperator=None, verbose=False):
             for line in f:
 
                 line = line.strip()
+                if len(line) == 0:
+                    continue
                 if line[0] == ">":
                     line = line[1:]
                     if seperator is not None:
@@ -188,6 +190,7 @@ def get_genes_and_cds(gff_path, verbose=False):
     """loads a gff file and finds all the genes, CDS and mRNA and returns the genes with their corresponding CDS"""
 
     gff_data = load_gff(gff_path, ["gene","CDS", "mRNA"],verbose=verbose)
+
     if verbose:
         print("Starting to structure gff data!")
     gene_and_cds = {}

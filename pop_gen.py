@@ -66,4 +66,5 @@ def analyze_sync_file(nucleotide_file, sync_file, output, restfile, threads,low_
     outfile.close()
 
 if __name__ == "__main__":
-    analyze_sync_file("E_coli.tbg", "E_coli.sync", "sync_results.tsv",0,2, stat_file="stats_test.tsv")
+    pass
+    # analyze_sync_file("E_coli.tbg", "E_coli.sync", "sync_results.tsv",0,2, stat_file="stats_test.tsv")
