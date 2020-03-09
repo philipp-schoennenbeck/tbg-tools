@@ -100,15 +100,18 @@ def calculate_nucleotides(gene_sequences, aa_codes, gff_data, verbose, scaffolds
             base = gene_sequences[gene][nucleotide].replace("U", "T")
             if forward:
                 base_in_gene = base
+                amino_acid = get_code(triplett, aa_codes)
             else:
-                base_in_gene = str(get_other_strand(base)).replace("U", "T")
+                base_in_gene = str(get_other_strand(base,rna=False))
+                amino_acid = get_code(get_other_strand(triplett[::-1]), aa_codes)
 
-            amino_acid = get_code(triplett, aa_codes)
             if amino_acid is None:
                 amino_acid = "+"
             gene_id = genes_to_number[gene]
-
-            amino_acids = get_all_aa(triplett, position_in_triplett, aa_codes)
+            try:
+                amino_acids = get_all_aa(triplett, position_in_triplett, aa_codes)
+            except:
+                raise Exception(f"{gene}, {position}")
 
             four_ds = all([i == amino_acids[0] for i in amino_acids])
             A, C, G, T = amino_acids
@@ -249,7 +252,7 @@ def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin=
         with open(outfile_hr, 'w') as outfile:
             for filename in filenames_hr:
                 if verbose:
-                    print("\t" + filename + "\n")
+                    print("\t" + filename )
                 with open(filename, 'r') as infile:
                     for line in infile:
                         outfile.write(line)
