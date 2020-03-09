@@ -35,7 +35,7 @@ def get_code(code, aa_codes, three_letter_code = False):
     if "N" in code:
         position = code.index("N")
         try:
-            all_aa = get_all_aa(code, position, aa_codes)
+            counter, all_aa = get_all_aa(code, position, aa_codes)
             if all(i == all_aa[0] for i in all_aa):
                 return all_aa[0]
             else:
@@ -54,12 +54,22 @@ def get_code(code, aa_codes, three_letter_code = False):
 def get_all_aa(code, position, aa_codes, three_letter_code=False):
     """Returns all possible amino acids with changes at the position"""
     try:
+        counter = 0
+        if len(code) < 3:
+            code += "A"
+            counter +=1
+        if len(code) < 3:
+            code += "A"
+            counter += 1
+        if counter > 0:
+            print(f"The sequence was not dividable by 3, probably completed by poly-A tail. Added {counter}"
+                  f" A's to infer the amino acid")
         triplet = [code[0], code[1], code[2]]
         amino_acids = []
         for base in bases:
             triplet[position] = base
             amino_acids.append(get_code("".join(triplet), aa_codes, three_letter_code))
-        return amino_acids
+        return (counter,amino_acids)
     except Exception:
         raise Exception(f"Cannot find all possible outcomes when changing one base. (Base: {code},"
                         f" position: {position}, tripplet: {code})")
@@ -188,15 +198,16 @@ def sort_first(element):
 
 def get_genes_and_cds(gff_path, verbose=False):
     """loads a gff file and finds all the genes, CDS and mRNA and returns the genes with their corresponding CDS"""
-
-    gff_data = load_gff(gff_path, ["gene","CDS", "mRNA"],verbose=verbose)
+    lookup = ["gene","CDS", "mRNA"] # "V_gene_segment", "D_gene_segment", "C_gene_segment", "J_gene_segment"
+    gff_data = load_gff(gff_path,lookup ,verbose=verbose)
 
     if verbose:
         print("Starting to structure gff data!")
     gene_and_cds = {}
-    mrna = {}
-    if len(gff_data["mRNA"]) == 0:
-        for gene in gff_data["gene"]:
+    for element in lookup:
+        if element == "CDS":
+            continue
+        for gene in gff_data[element]:
             gene = gene.strip()
             gene = gene.split("\t")
             gene_split = gene[8].split(";")
@@ -207,26 +218,7 @@ def get_genes_and_cds(gff_path, verbose=False):
                         gene_and_cds[gene_id] = [[], True, gene[0]]
                     else:
                         gene_and_cds[gene_id] = [[], False, gene[0]]
-    else:
-        for rna in gff_data["mRNA"]:
-            rna = rna.strip()
-            rna  = rna.split("\t")
-            rna_split = rna[8].split(";")
-            rna_parent = ""
-            rna_id = ""
-            for i in rna_split:
 
-                # if i[0:7] == "Parent=":
-                #     rna_parent = i[7:]
-                if i[0:3] == "ID=":
-                    rna_id = i[3:]
-            if rna_id == "":
-                raise Exception(f"Did not find ID and/or Parent of mRNA \"{rna}\"")
-            else:
-                if rna[6] == "+":
-                    gene_and_cds[rna_id] = [[], True, rna[0]]
-                else:
-                    gene_and_cds[rna_id] = [[], False, rna[0]]
     for cds in gff_data["CDS"]:
         cds = cds.strip()
         cds = cds.split("\t")
@@ -236,8 +228,10 @@ def get_genes_and_cds(gff_path, verbose=False):
                 try:
                     gene_and_cds[i[7:]][0].append([int(cds[3]), int(cds[4])])
                 except Exception:
-                    if verbose:
-                        print(f"Some CDS does not have a corresponding parent in the gff file, maybe it is a pseudogene\n{cds}")
+
+                    print(f"Some CDS does not have a corresponding parent in the gff file,"
+                              f" it could be a pseudogene or some t-cell receptor gene \n{cds}\nparents are only"
+                          f" {lookup}, you can add additional parents with the --parents option!")
                     # raise Exception(f"Some CDS does not have a corresponding parent in the gff file\n{cds}")
                 # if i[7:] in gene_and_cds:
                 #     gene_and_cds[i[7:]][0].append([int(cds[3]), int(cds[4])])

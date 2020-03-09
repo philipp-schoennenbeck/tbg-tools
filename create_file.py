@@ -109,10 +109,12 @@ def calculate_nucleotides(gene_sequences, aa_codes, gff_data, verbose, scaffolds
                 amino_acid = "+"
             gene_id = genes_to_number[gene]
             try:
-                amino_acids = get_all_aa(triplett, position_in_triplett, aa_codes)
+                poly_a, amino_acids = get_all_aa(triplett, position_in_triplett, aa_codes)
             except:
-                raise Exception(f"{gene}, {position}")
-
+                print(f"Some problems with gene {gene}, triplett {triplett}, position {position}")
+                continue
+            if poly_a > 0:
+                print(f"Gene: {gene}\n")
             four_ds = all([i == amino_acids[0] for i in amino_acids])
             A, C, G, T = amino_acids
             outlist.append("\t".join((str(i) for i in [scaff_id, position, base, base_in_gene,
