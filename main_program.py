@@ -20,17 +20,29 @@ if __name__ == "__main__":
 
     if len(sys.argv) >= 2:
         if sys.argv[1] == "create":
+            parser.add_argument('--head',
+                                dest='size',
+                                const=10,
+                                default=80,
+                                action='store',
+                                nargs='?',
+                                type=int,
+                                help='Only print the head of the output')
+
             parser.add_argument("-f", "--fasta", help="path to fasta file", required=True)
             parser.add_argument("-g", "--gff", help="path to gff file", required=True)
             parser.add_argument("-o", "--outfile", help="path to the created file, default is the gff name + .tbg",
                                 default=None)
-            parser.add_argument("-hr", "--human_readable", help="creates a human readable file aswell",
-                                action="store_true")
+            parser.add_argument("-hr", "--human_readable",const="outfile_hr.tsv", default=None, help="creates a human readable file aswell,"
+                                                                "default is outfile_hr.tsv",nargs="?", type=str,
+                                action="store")
             parser.add_argument("-aa", "--amino_acid_codes", help="selects the amino acid code from aa_codes.txt,"
                                                                   " default is default", default="default")
             parser.add_argument("-p", "--protein_file", help="path to an extra protein fasta file", default=None)
-            parser.add_argument("-hro", "--human_readable_outfile", help="path to the human readable file,"
-                                                                         "default is \"outfile\"_hr.tsv")
+            parser.add_argument("-n", "--gene_sequence_file", help="path to an extra gene sequence file (nucleotide "
+                                                                   "sequence)", default=None)
+            # parser.add_argument("-hro", "--human_readable_outfile", help="path to the human readable file,"
+            #                                                              "default is \"outfile\"_hr.tsv")
             parser.add_argument("-v", "--verbose", help="increases verbosity", action="store_true", default=False)
             parser.add_argument("-t", "--threads", help="number of threads to be used", default=1, type=int)
             parser.add_argument("-w", "--low_ram", help="option for systems with low RAM, will create some intermediate"
@@ -42,23 +54,23 @@ if __name__ == "__main__":
                 outfile = args.outfile
             else:
                 outfile = args.gff[:-3] + "tbg"
-            if args.human_readable:
-                hr = True
-                if args.human_readable_outfile:
-                    hro = args.human_readable_outfile
-                else:
-                    hro = outfile[:-4] + "_hr.tsv"
-            else:
-                hr = False
-                hro = None
+            # if args.human_readable:
+            #     hr = True
+            #     if args.human_readable_outfile:
+            #         hro = args.human_readable_outfile
+            #     else:
+            #         hro = outfile[:-4] + "_hr.tsv"
+            # else:
+            #     hr = False
+            #     hro = None
             if not os.path.isfile(args.gff):
                 raise FileNotFoundError(f"gff file was not found (\"{args.gff}\")")
             if not os.path.isfile(args.fasta):
                 raise FileNotFoundError(f"fasta file was not found (\"{args.fasta}\")")
-            create_file.create_the_file(args.gff, args.fasta, outfile_bin=outfile, outfile_hr=hro,
-                                        verbose=args.verbose, create_binary=True, write_tsv=hr,
+            create_file.create_the_file(args.gff, args.fasta, outfile_bin=outfile, outfile_hr=args.human_readable,
+                                        verbose=args.verbose, create_binary=True,
                                         aa_code=args.amino_acid_codes, threads=args.threads, protein=args.protein_file,
-                                        low_ram=args.low_ram)
+                                        low_ram=args.low_ram, write_gene=args.gene_sequence_file)
         elif sys.argv[1] == "search":
             parser.add_argument("-n", "--tbg_file", help="path to the tbg file created with \"create\"", required=True)
             snp_group = parser.add_mutually_exclusive_group(required=True)

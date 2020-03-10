@@ -134,8 +134,9 @@ def calculate_nucleotides(gene_sequences, aa_codes, gff_data, verbose, scaffolds
 
 
 
-def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin="default.bin", verbose=False,
-                    create_binary=True, write_tsv=False, aa_code="default", threads=1, protein=None, low_ram=False):
+def create_the_file(gff_file, fasta_file, outfile_hr=None, outfile_bin="default.bin", verbose=False,
+                    create_binary=True, aa_code="default", threads=1, protein=None, low_ram=False,
+                    write_gene=None):
     """Loading in all files and creating the tbg file and optionally a protein file and a human readable file"""
     #Load in all the files and data
     aa_codes = load_aa_codes(aa_code)
@@ -173,36 +174,44 @@ def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin=
             number_to_scaffold[scaffold_counter] = gff_data[gene][2]
             scaffold_counter += 1
 
-    write_gene = False
 
-    # writing the protein file
-    write_gene = None
+
+    # writing the protein/gene file
+
     if protein is not None or write_gene is not None:
         if verbose:
-            print("Starting to write protein_file")
-        with open(protein, "w") as f:
-            if write_gene:
-                g = open("E_coli_genes.fa", "w")
-            for gene in gene_sequences.keys():
+            print("Starting to write protein/gene file")
+        if protein is not None:
+            f = open(protein, "w")
+        if write_gene:
+            g = open(write_gene, "w")
+        for gene in gene_sequences.keys():
+            if protein:
                 f.write(">" + gene + "\n")
-                if write_gene:
-                    g.write(">" + gene + "\n")
-                if gff_data[gene][1]:
+            if write_gene:
+                g.write(">" + gene + "\n")
+            if gff_data[gene][1]:
 
+                if protein:
                     f.write(rna_to_protein(gene_sequences[gene], aa_codes) + "\n")
-                    if write_gene:
-                        g.write(gene_sequences[gene] + "\n")
-                else:
+                if write_gene:
+                    g.write(gene_sequences[gene] + "\n")
+            else:
+                if protein:
                     f.write(rna_to_protein(get_other_strand(gene_sequences[gene]), aa_codes) + "\n")
-                    if write_gene:
-                        g.write(get_other_strand(gene_sequences[gene]) + "\n")
+                if write_gene:
+                    g.write(get_other_strand(gene_sequences[gene]) + "\n")
 
-        f.close()
+        if protein:
+            f.close()
+        if write_gene:
+            g.close()
+
 
 
     # Creating new temporary files and getting their names
     filenames = create_file_names_and_files(threads+1, begin="tbg_temp_file_")
-    if write_tsv:
+    if outfile_hr is not None:
         filenames_hr = create_file_names_and_files(threads, begin="tbg_temp_tsv_file_")
     else:
         filenames_hr = [None for _ in range(threads)]
@@ -250,7 +259,7 @@ def create_the_file(gff_file, fasta_file, outfile_hr="default.tsv", outfile_bin=
                     outfile.write(line)
             os.remove(filename)
 
-    if write_tsv:
+    if outfile_hr is not None:
         with open(outfile_hr, 'w') as outfile:
             for filename in filenames_hr:
                 if verbose:

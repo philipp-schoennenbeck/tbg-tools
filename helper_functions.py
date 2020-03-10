@@ -198,26 +198,26 @@ def sort_first(element):
 
 def get_genes_and_cds(gff_path, verbose=False):
     """loads a gff file and finds all the genes, CDS and mRNA and returns the genes with their corresponding CDS"""
-    lookup = ["gene","CDS", "mRNA"] # "V_gene_segment", "D_gene_segment", "C_gene_segment", "J_gene_segment"
-    gff_data = load_gff(gff_path,lookup ,verbose=verbose)
+    # lookup = ["gene","CDS", "mRNA"] # "V_gene_segment", "D_gene_segment", "C_gene_segment", "J_gene_segment"
+    gff_data = load_gff(gff_path, ["CDS"] ,verbose=verbose)
 
     if verbose:
         print("Starting to structure gff data!")
     gene_and_cds = {}
-    for element in lookup:
-        if element == "CDS":
-            continue
-        for gene in gff_data[element]:
-            gene = gene.strip()
-            gene = gene.split("\t")
-            gene_split = gene[8].split(";")
-            for i in gene_split:
-                if "ID=" == i[0:3]:
-                    gene_id = i[3:]
-                    if gene[6] == "+":
-                        gene_and_cds[gene_id] = [[], True, gene[0]]
-                    else:
-                        gene_and_cds[gene_id] = [[], False, gene[0]]
+    # for element in lookup:
+    #     if element == "CDS":
+    #         continue
+    #     for gene in gff_data[element]:
+    #         gene = gene.strip()
+    #         gene = gene.split("\t")
+    #         gene_split = gene[8].split(";")
+    #         for i in gene_split:
+    #             if "ID=" == i[0:3]:
+    #                 gene_id = i[3:]
+    #                 if gene[6] == "+":
+    #                     gene_and_cds[gene_id] = [[], True, gene[0]]
+    #                 else:
+    #                     gene_and_cds[gene_id] = [[], False, gene[0]]
 
     for cds in gff_data["CDS"]:
         cds = cds.strip()
@@ -225,18 +225,18 @@ def get_genes_and_cds(gff_path, verbose=False):
         cds_split = cds[8].split(";")
         for i in cds_split:
             if i[0:7] == "Parent=":
-                try:
+                if i[7:] in gene_and_cds:
                     gene_and_cds[i[7:]][0].append([int(cds[3]), int(cds[4])])
-                except Exception:
+                else:
+                    if cds[6] == "+":
+                        gene_and_cds[i[7:]] = [[[int(cds[3]), int(cds[4])]], True, cds[0]]
+                    else:
+                        gene_and_cds[i[7:]] = [[[int(cds[3]), int(cds[4])]], False, cds[0]]
 
-                    print(f"Some CDS does not have a corresponding parent in the gff file,"
-                              f" it could be a pseudogene or some t-cell receptor gene \n{cds}\nparents are only"
-                          f" {lookup}, you can add additional parents with the --parents option!")
-                    # raise Exception(f"Some CDS does not have a corresponding parent in the gff file\n{cds}")
-                # if i[7:] in gene_and_cds:
-                #     gene_and_cds[i[7:]][0].append([int(cds[3]), int(cds[4])])
-                # elif i[7:] in mrna:
-                #     gene_and_cds[mrna[i[7:]]][0].append([int(cds[3]), int(cds[4])])
+                    # print(f"Some CDS does not have a corresponding parent in the gff file,"
+                    #           f" it could be a pseudogene or some t-cell receptor gene \n{cds}\nparents are only"
+                    #       f" {lookup}, you can add additional parents with the --parents option!")
+
     delete_list = []
     for key in gene_and_cds.keys():
         if gene_and_cds[key][0] == []:
