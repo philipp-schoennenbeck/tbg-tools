@@ -106,15 +106,22 @@ def check_snps_low_ram(nucleotide_file, snps=None, verbose=False):
                 break
             scaffold_and_position = struct.unpack("II", scaffold_and_position)
             rest = [str(i) for i in  decode_line(rest, genes)]
+            rest.append("\n")
             if (scaffolds[scaffold_and_position[0]], scaffold_and_position[1]) in snps_dic:
-                rest.append("\n")
-                snps_dic[scaffolds[scaffold_and_position[0]], scaffold_and_position[1]] = rest
+                if snps_dic[ (scaffolds[scaffold_and_position[0]], scaffold_and_position[1])] is None:
+
+                    snps_dic[scaffolds[scaffold_and_position[0]], scaffold_and_position[1]] = [rest]
+                else:
+                    snps_dic[scaffolds[scaffold_and_position[0]], scaffold_and_position[1]].append(rest)
 
     rest=[]
+    return_snps = {}
     for i in snps_dic.keys():
         if snps_dic[i] is None:
             rest.append(f"{i[0]}\t{i[1]}\n")
-    return (rest,snps)
+        else:
+            return_snps[i] = snps_dic[i]
+    return (rest,return_snps)
 
 
 

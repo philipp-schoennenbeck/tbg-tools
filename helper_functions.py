@@ -85,7 +85,7 @@ def get_other_strand(strand, rna=True):
     return strand
 
 
-def load_gff(path, types=None, verbose=False):
+def load_gff(path, types=None, verbose=False, filter=None):
     """"Loads a gff file and searches for all types of the given type.
      Returns a list of all the entries with that type."""
     with open(path, "r") as f:
@@ -108,6 +108,9 @@ def load_gff(path, types=None, verbose=False):
             if line[0] == "#":
                 continue
             line_split = line.split("\t")
+            if filter is not None:
+                if line[1] not in filter:
+                    continue
             if types is None:
                 if len(line_split) >= 8:
                     gff_data["all"].append(line)
@@ -196,10 +199,10 @@ def sort_first(element):
     return element[0]
 
 
-def get_genes_and_cds(gff_path, verbose=False):
+def get_genes_and_cds(gff_path, verbose=False, filter=None):
     """loads a gff file and finds all the genes, CDS and mRNA and returns the genes with their corresponding CDS"""
     # lookup = ["gene","CDS", "mRNA"] # "V_gene_segment", "D_gene_segment", "C_gene_segment", "J_gene_segment"
-    gff_data = load_gff(gff_path, ["CDS"] ,verbose=verbose)
+    gff_data = load_gff(gff_path, ["CDS"] ,verbose=verbose, filter=filter)
 
     if verbose:
         print("Starting to structure gff data!")

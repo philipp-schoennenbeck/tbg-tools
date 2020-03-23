@@ -71,7 +71,7 @@ def write_hr(data, path, number_to_scaffold, number_to_gene, verbose):
 
 
 def calculate_nucleotides(gene_sequences, aa_codes, gff_data, verbose, scaffolds_to_number, number_to_scaffold,
-                          genes_to_number, number_to_gene, filename, write_tsv_path, low_ram ):
+                          genes_to_number, number_to_gene, filename, write_tsv_path, low_ram,ignore ):
     """nucleotide function for the multiprocessing"""
     outlist = []
     counter = 0
@@ -84,6 +84,9 @@ def calculate_nucleotides(gene_sequences, aa_codes, gff_data, verbose, scaffolds
                 print(f"{round(printer * 100)}% done")
                 printer += 0.05
         forward = gff_data[gene][1]
+        if ignore:
+            if len(gene_sequences[gene]) % 3 != 0:
+                continue
         for nucleotide in range(len(gene_sequences[gene])):
             if len(outlist) > 50000:
                 if low_ram :
@@ -136,13 +139,13 @@ def calculate_nucleotides(gene_sequences, aa_codes, gff_data, verbose, scaffolds
 
 def create_the_file(gff_file, fasta_file, outfile_hr=None, outfile_bin="default.bin", verbose=False,
                     create_binary=True, aa_code="default", threads=1, protein=None, low_ram=False,
-                    write_gene=None):
+                    write_gene=None, filter=None, ignore=False):
     """Loading in all files and creating the tbg file and optionally a protein file and a human readable file"""
     #Load in all the files and data
     aa_codes = load_aa_codes(aa_code)
 
     try:
-        gff_data = get_genes_and_cds(gff_file, verbose=verbose)
+        gff_data = get_genes_and_cds(gff_file, verbose=verbose, filter=filter)
     except:
         raise Exception("Having trouble with loading in the data from the gff file.")
 
@@ -164,6 +167,9 @@ def create_the_file(gff_file, fasta_file, outfile_hr=None, outfile_bin="default.
     # get the sequence of every gene and filling dicts
     for gene in gff_data.keys():
         sequence = get_sequence_from_fasta(fasta_data[gff_data[gene][2]], gff_data[gene][0])
+        if ignore:
+            if len(sequence) % 3 != 0:
+                continue
         gene_sequences[gene] = coding_strand_to_rna(sequence)
         if gene not in gene_to_number:
             gene_to_number[gene] = gene_counter
@@ -237,7 +243,8 @@ def create_the_file(gff_file, fasta_file, outfile_hr=None, outfile_bin="default.
     pool = mp.Pool(processes=len(thread_gene_sequences))
     results = [pool.apply_async(calculate_nucleotides, args=(thread_gene_sequences[x], aa_codes, gff_data, verboses[x],
                                                              scaffold_to_number, number_to_scaffold, gene_to_number,
-                                                             number_to_gene, filenames[x+1], filenames_hr[x], low_ram))
+                                                             number_to_gene, filenames[x+1], filenames_hr[x], low_ram
+                                                             ,ignore))
                                                             for x in range(len(thread_gene_sequences))]
 
     # Waiting for the mp output

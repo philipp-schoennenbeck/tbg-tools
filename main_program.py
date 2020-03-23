@@ -20,15 +20,6 @@ if __name__ == "__main__":
 
     if len(sys.argv) >= 2:
         if sys.argv[1] == "create":
-            parser.add_argument('--head',
-                                dest='size',
-                                const=10,
-                                default=80,
-                                action='store',
-                                nargs='?',
-                                type=int,
-                                help='Only print the head of the output')
-
             parser.add_argument("-f", "--fasta", help="path to fasta file", required=True)
             parser.add_argument("-g", "--gff", help="path to gff file", required=True)
             parser.add_argument("-o", "--outfile", help="path to the created file, default is the gff name + .tbg",
@@ -47,6 +38,11 @@ if __name__ == "__main__":
             parser.add_argument("-t", "--threads", help="number of threads to be used", default=1, type=int)
             parser.add_argument("-w", "--low_ram", help="option for systems with low RAM, will create some intermediate"
                                                         "files, if used with --threads", action="store_true", default=False)
+            parser.add_argument("-i", "--ignore", help="discard genes with length which is not dividable by 3, default"
+                                                       " is adding \"A's\" until it is dividable by 3 (poly-A tail)", default=False,
+                                action="store_true")
+            parser.add_argument( "--filter", help="list of source programs (column two of the gff) to use seperated by "
+                                                  "a whitespace", nargs="+", default=None)
             args = parser.parse_args(sys.argv[2:])
 
 
@@ -54,15 +50,7 @@ if __name__ == "__main__":
                 outfile = args.outfile
             else:
                 outfile = args.gff[:-3] + "tbg"
-            # if args.human_readable:
-            #     hr = True
-            #     if args.human_readable_outfile:
-            #         hro = args.human_readable_outfile
-            #     else:
-            #         hro = outfile[:-4] + "_hr.tsv"
-            # else:
-            #     hr = False
-            #     hro = None
+
             if not os.path.isfile(args.gff):
                 raise FileNotFoundError(f"gff file was not found (\"{args.gff}\")")
             if not os.path.isfile(args.fasta):
@@ -70,7 +58,7 @@ if __name__ == "__main__":
             create_file.create_the_file(args.gff, args.fasta, outfile_bin=outfile, outfile_hr=args.human_readable,
                                         verbose=args.verbose, create_binary=True,
                                         aa_code=args.amino_acid_codes, threads=args.threads, protein=args.protein_file,
-                                        low_ram=args.low_ram, write_gene=args.gene_sequence_file)
+                                        low_ram=args.low_ram, write_gene=args.gene_sequence_file,filter=args.filter, ignore=args.ignore)
         elif sys.argv[1] == "search":
             parser.add_argument("-n", "--tbg_file", help="path to the tbg file created with \"create\"", required=True)
             snp_group = parser.add_mutually_exclusive_group(required=True)
@@ -123,17 +111,28 @@ if __name__ == "__main__":
             parser.add_argument("-o", "--outfile", help="path the to human readable file, default ist the tbg"
                                                         " file with .tsv")
             parser.add_argument("-v", "--verbose", help="increases verbosity", action="store_true", default=False)
-            parser.add_argument("-s", "--sync_file", help="Path to a sync file")
-            parser.add_argument("-sf", "--stats_file", help="Path to an optioal stats file to write")
+            parser.add_argument("-s", "--sync_file", help="Path to a sync file", default=None)
+            parser.add_argument("-vcf", "--vcf_file", help="Path to a vcf file", default=None)
+
+            parser.add_argument("-sf", "--stats_file", help="Path to an optioal stats file to write", default=None)
             parser.add_argument("-t", "--threads",help="number of threads to be used", default=1, type=int)
-            parser.add_argument("-r", "--rest", help="Path to a potential file with not found positions")
+            parser.add_argument("-r", "--rest", help="Path to a potential file with not found positions", default=None)
+            parser.add_argument("-w", "--low_ram", help="option for systems with low RAM", action="store_true",
+                                default=False)
             args = parser.parse_args(sys.argv[2:])
             if not os.path.isfile(args.tbg_file):
                 raise FileNotFoundError(f"tbg file was not found (\"{args.tbg_file}\")")
-            if not os.path.isfile(args.sync_file):
-                raise FileNotFoundError(f"sync file was not found (\"{args.sync_file}\")")
+
             if args.sync_file is not None:
-                pop_gen.analyze_sync_file(args.tbg_file, args.sync_file, args.outfile, args.rest, threads=args.threads, stat_file=args.stats_file)
+                if not os.path.isfile(args.sync_file):
+                    raise FileNotFoundError(f"sync file was not found (\"{args.sync_file}\")")
+                pop_gen.analyze_sync_file(args.tbg_file, args.sync_file, args.outfile, args.rest, threads=args.threads,
+                                          stat_file=args.stats_file, low_ram=args.low_ram, verbose=args.verbose)
+            if args.vcf_file is not None:
+                if not os.path.isfile(args.vcf_file):
+                    raise FileNotFoundError(f"vcf file was not found (\"{args.sync_file}\")")
+                pop_gen.analyze_vcf_file(args.tbg_file, args.vcf_file, args.outfile, args.rest, threads=args.threads,
+                                          stat_file=args.stats_file, low_ram=args.low_ram, verbose=args.verbose)
         else:
             args = parser.parse_args()
             if args.version:
@@ -143,3 +142,5 @@ if __name__ == "__main__":
     else:
         parser.print_help()
     # print((datetime.now() - time).total_seconds())
+# create -f E_coli.fa -g E_coli.gff -p E_coli_proteins.fa -o E_coli.tbg -hr E_coli_tbg.tsv -t 4 -v -w -n E_coli_genes.fa
+# search -n E_coli.tbg -o E_coli_specific_gene_tbg.tsv -v -t 4 -g gene-b3268
