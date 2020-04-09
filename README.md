@@ -1,4 +1,4 @@
-# tbg 
+# tbg-tools
 
 The purpose of this program is to quickly look up positions on scaffolds and get some further informations about these positions.
 It is not in its finished version and there are surely still some bugs to be found. 
