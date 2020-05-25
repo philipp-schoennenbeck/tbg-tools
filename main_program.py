@@ -32,8 +32,7 @@ if __name__ == "__main__":
             parser.add_argument("-p", "--protein_file", help="path to an extra protein fasta file", default=None)
             parser.add_argument("-n", "--gene_sequence_file", help="path to an extra gene sequence file (nucleotide "
                                                                    "sequence)", default=None)
-            # parser.add_argument("-hro", "--human_readable_outfile", help="path to the human readable file,"
-            #                                                              "default is \"outfile\"_hr.tsv")
+
             parser.add_argument("-v", "--verbose", help="increases verbosity", action="store_true", default=False)
             parser.add_argument("-t", "--threads", help="number of threads to be used", default=1, type=int)
             parser.add_argument("-w", "--low_ram", help="option for systems with low RAM, will create some intermediate"

@@ -323,10 +323,13 @@ def read_binary_lines(lines):
                 break
             scaffold_and_position = struct.unpack("II", scaffold_and_position)
             if scaffold_and_position[0] in data:
-                data[scaffold_and_position[0]][scaffold_and_position[1]] = rest
+                if scaffold_and_position[1] in data[scaffold_and_position[0]]:
+                    data[scaffold_and_position[0]][scaffold_and_position[1]].append(rest)
+                else:
+                    data[scaffold_and_position[0]][scaffold_and_position[1]] = [rest]
             else:
                 data[scaffold_and_position[0]] = {}
-                data[scaffold_and_position[0]][scaffold_and_position[1]] = rest
+                data[scaffold_and_position[0]][scaffold_and_position[1]] = [rest]
     return data
 
 
@@ -373,7 +376,7 @@ def read_binary_file_with_threads(path, threads=1):
                 data[scaffold_name] = {}
             for position in i[scaffold_name].keys():
                 if position in data[scaffold_name]:
-                    data[scaffold_name][position].append(i[scaffold_name][position])
+                    data[scaffold_name][position].extend(i[scaffold_name][position])
                 else:
                     data[scaffold_name][position] = [i[scaffold_name][position]]
 
