@@ -146,8 +146,11 @@ def analyze_vcf_file(nucleotide_file, vcf_file, output, restfile=None, threads=1
             for line in vcf:
                 if line[0] == "#":
                     continue
+
                 line = line.strip()
                 columns = line.split("\t")
+                if len(columns) <= 3:
+                    continue
                 snps.append((columns[0], int(columns[1])))
                 vcf_data[vcf_f][(columns[0], int(columns[1]), columns[3], columns[4],columns[2])] = columns[5:]
 
