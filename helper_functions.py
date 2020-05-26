@@ -378,7 +378,7 @@ def read_binary_file_with_threads(path, threads=1):
                 if position in data[scaffold_name]:
                     data[scaffold_name][position].extend(i[scaffold_name][position])
                 else:
-                    data[scaffold_name][position] = [i[scaffold_name][position]]
+                    data[scaffold_name][position] = i[scaffold_name][position]
 
     return data, genes, scaffolds
 
