@@ -211,16 +211,18 @@ def analyze_vcf_file(nucleotide_file, vcf_file, output, restfile=None, threads=1
 
                             if len(alt) != 1 or alt not in "ATGC":
                                 alt_aa.append("-")
-                                if len(stat_file) > 1:
-                                    not_snps_variants[vcf_f] += 1
-                                else:
+                                if stat_file is not None:
+                                    if len(stat_file) > 1:
+                                        not_snps_variants[vcf_f] += 1
+                                    else:
 
-                                    not_snps_variants += 1
+                                        not_snps_variants += 1
                                 continue
-                            if len(stat_file) > 1:
-                                snps_in_gene[vcf_f] += 1
-                            else:
-                                snps_in_gene += 1
+                            if stat_file is not None:
+                                if len(stat_file) > 1:
+                                    snps_in_gene[vcf_f] += 1
+                                else:
+                                    snps_in_gene += 1
                             alt_aa.append(line[ATCG_dict[alt]])
                             if stat_file is not None:
                                 if line[ATCG_dict[alt]] == ref_aa:
@@ -236,16 +238,18 @@ def analyze_vcf_file(nucleotide_file, vcf_file, output, restfile=None, threads=1
                         alt_aa = ",".join(alt_aa)
                         outfile.write("\t".join([str(keys[0]),str(keys[1])]) + f"\t{line[4]}\t{ref_aa}\t{alt_aa}\t" + "\t".join(vcf_data[vcf_f][keys]) + "\n")
                     else:
-                        if len(stat_file) > 1:
-                            not_snps_variants[vcf_f] += 1
-                        else:
-                            not_snps_variants += 1
+                        if stat_file is not None:
+                            if len(stat_file) > 1:
+                                not_snps_variants[vcf_f] += 1
+                            else:
+                                not_snps_variants += 1
 
             else:
-                if len(stat_file) > 1:
-                    snps_not_in_gene[vcf_f] += 1
-                else:
-                    snps_not_in_gene += 1
+                if stat_file is not None:
+                    if len(stat_file) > 1:
+                        snps_not_in_gene[vcf_f] += 1
+                    else:
+                        snps_not_in_gene += 1
                 if restfile is not None:
                     out = [str(i) for i in [keys[0], keys[1], keys[4], keys[2], keys[3]]]
                     out.extend(vcf_data[vcf_f][keys])
