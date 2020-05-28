@@ -4,7 +4,7 @@ import copy
 
 def analyze_sync_file(nucleotide_file, sync_file, output, restfile=None, threads=1,low_ram=False, stat_file=None, verbose=False):
     sync_data = {i:{} for i in sync_file}
-    snps = []
+    snps_dict = {}
 
     populations = 0
     if verbose:
@@ -21,8 +21,11 @@ def analyze_sync_file(nucleotide_file, sync_file, output, restfile=None, threads
                     continue
 
                 populations = len(columns[3:])
-                snps.append((columns[0], int(columns[1])))
+                snps_dict[(columns[0], int(columns[1]))] = True
                 sync_data[sync_f][(columns[0], int(columns[1]), columns[2])] = columns[3:]
+    snps = []
+    for snp in snps_dict.keys():
+        snps.append(snp)
 
     if stat_file is not None:
         if len(stat_file) > 1:
@@ -136,7 +139,7 @@ def analyze_sync_file(nucleotide_file, sync_file, output, restfile=None, threads
 
 def analyze_vcf_file(nucleotide_file, vcf_file, output, restfile=None, threads=1,low_ram=False, stat_file=None, verbose=False):
     vcf_data = {i:{} for i in vcf_file}
-    snps = []
+    snps_dict = {}
     ATCG_dict = {"A": 6, "T": 7, "C": 8, "G": 9}
 
     if verbose:
@@ -151,9 +154,11 @@ def analyze_vcf_file(nucleotide_file, vcf_file, output, restfile=None, threads=1
                 columns = line.split("\t")
                 if len(columns) <= 3:
                     continue
-                snps.append((columns[0], int(columns[1])))
+                snps_dict[(columns[0], int(columns[1]))] = True
                 vcf_data[vcf_f][(columns[0], int(columns[1]), columns[3], columns[4],columns[2])] = columns[5:]
-
+    snps = []
+    for snp in snps_dict.keys():
+        snps.append(snp)
     if stat_file is not None:
         if len(stat_file) > 1:
             snps_not_in_gene = {i:0 for i in vcf_file}

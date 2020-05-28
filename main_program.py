@@ -62,12 +62,15 @@ if __name__ == "__main__":
             parser.add_argument("-n", "--tbg_file", help="path to the tbg file created with \"create\"", required=True)
             snp_group = parser.add_mutually_exclusive_group(required=True)
             snp_group.add_argument("-b", "--bed", help="path to tab seperated bed file with the SNPs, \"scaffold  position\", "
-                                                       "it is also possible to search entire regions with \"scaffold  start   end\"")
+                                                       "it is also possible to search entire regions with \"scaffold  start   end\","
+                                                       "multiple files can be seperated by space", nargs="+")
             snp_group.add_argument("-s", "--snps", help="list of SNPs separated by space e.g. \"scaffold1,position1 "
                                                      "scaffold2,position2 \" ", nargs="+")
             parser.add_argument("-o", "--outfile", help="path to the resulted outfile,"
-                                                        " default is \"default.tsv\"", default="default.tsv")
-            parser.add_argument("-r", "--rest", help="path to the file with all none relevant SNPs, default is no file")
+                                                        " default is \"default.tsv\","
+                                                        "multiple files can be seperated by space", nargs="+")
+            parser.add_argument("-r", "--rest", help="path to the file with all none relevant SNPs, default is no file,"
+                                                     "multiple files can be seperated by space, has to be the same number as the bed files or none", nargs="+")
             parser.add_argument("-v", "--verbose", help="increases verbosity", action="store_true")
             parser.add_argument("-t", "--threads", help="number of threads to be used", default=1, type=int)
             snp_group.add_argument("-g", "--genes", help="list of genes for a human readable file with only these genes,"
@@ -81,12 +84,28 @@ if __name__ == "__main__":
             if not os.path.isfile(args.tbg_file):
                 raise FileNotFoundError(f"tbg file was not found (\"{args.tbg_file}\")")
             if args.bed:
-                if not os.path.isfile(args.bed):
-                    raise FileNotFoundError(f"bed file was not found (\"{args.bed}\")")
-                searching.check_snps(args.tbg_file, snp_file=args.bed, binary=True, outfile=args.outfile,
+                for bedfile in args.bed:
+                    if not os.path.isfile(bedfile):
+                        raise FileNotFoundError(f"bed file was not found (\"{bedfile}\")")
+                number_of_files = len(args.bed)
+                if args.rest is not None:
+                    rest_files = args.rest
+                    if len(rest_files) != number_of_files:
+                        raise ValueError("Number of restfiles must match bed files!")
+                else:
+                    rest_files = None
+
+                if args.outfile is not None:
+                    out_files = args.outfile
+                    if len(out_files) != 1 and len(out_files) != number_of_files:
+                        raise ValueError("Number of outfiles must match bed files or be 1!")
+                else:
+                    out_files = "default.tsv"
+                searching.check_snps(args.tbg_file, snp_file=args.bed, binary=True, outfile=out_files,
                                      rest_file=args.rest, threads=args.threads, low_ram=args.low_ram, verbose=args.verbose)
             elif args.snps:
                 snps = [i.split(",") for i in args.snps]
+                snps = [(i[0], int(i[1])) for i in snps]
                 searching.check_snps(args.tbg_file, snps=snps, binary=True, outfile=args.outfile,
                                      rest_file=args.rest, threads=args.threads, low_ram=args.low_ram, verbose=args.verbose)
             elif args.genes:
@@ -132,19 +151,19 @@ if __name__ == "__main__":
             if args.stats_file is not None:
                 stats_files = args.stats_file
                 if len(stats_files) != 1 and len(stats_files) != number_of_files:
-                    raise ValueError("Number of files must match vcf/sync files or be 1!")
+                    raise ValueError("Number of statsfiles must match vcf/sync files or be 1!")
             else:
                 stats_files = None
             if args.rest is not None:
                 rest_files = args.rest
                 if len(rest_files) != 1 and len(rest_files) != number_of_files:
-                    raise ValueError("Number of files must match vcf/sync files or be 1!")
+                    raise ValueError("Number of restfiles must match vcf/sync files or be 1!")
             else:
                 rest_files = None
             if args.outfile is not None:
                 out_files = args.outfile
                 if len(out_files) != 1 and len(out_files) != number_of_files:
-                    raise ValueError("Number of files must match vcf/sync files or be 1!")
+                    raise ValueError("Number of outfiles must match vcf/sync files or be 1!")
             else:
                 out_files = [args.tbg_file[:-4] + "_results.tsv"]
 

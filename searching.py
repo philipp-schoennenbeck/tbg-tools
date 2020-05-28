@@ -3,45 +3,86 @@ from copy import deepcopy
 import create_file
 
 
-def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile="snps.tsv", rest_file=None, threads=1,
+def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile=["snps.tsv"], rest_file=None, threads=1,
                low_ram=False, verbose=False):
     if snp_file is not None:
         if verbose:
-            print("Load in snp_file!")
+            print("Load in snp_file(s)!")
+        snps_dict = {}
+        snps_dict_per_file = {file : [] for file in snp_file}
+        for snp_file_single in snp_file:
+
+            with open(snp_file_single, "r") as f:
+
+                file = f.read().split("\n")
+                for i in range(len(file)):
+
+                    dummy = file[i].split("\t")
+                    if len(file[i].strip("\t\n ")) == 0:
+                        continue
+                    if len(dummy) == 2:
+                        snps_dict[(dummy[0], int(dummy[1]))] = True
+                        snps_dict_per_file[snp_file_single].append((dummy[0], int(dummy[1])))
+                    elif len(dummy) == 3:
+                        for j in range(int(dummy[1]), int(dummy[2])):
+                            snps_dict[(dummy[0], j)] = True
+                            snps_dict_per_file[snp_file_single].append((dummy[0], j))
         snps = []
-        with open(snp_file, "r") as f:
-
-            file = f.read().split("\n")
-            for i in range(len(file)):
-
-                dummy = file[i].split("\t")
-                if len(file[i].strip("\t\n ")) == 0:
-                    continue
-                if len(dummy) == 2:
-                    snps.append((dummy[0], int(dummy[1])))
-                elif len(dummy) == 3:
-                    for j in range(int(dummy[1]), int(dummy[2])):
-                        snps.append((dummy[0], j))
-
+        for snp in snps_dict.keys():
+            snps.append(snp)
+    if rest_file is None:
+        rest_file = [None for _ in snp_file]
+    print(snps)
     if low_ram:
         if verbose:
             print("Searching in tbg file for SNPs...")
         rest,found = check_snps_low_ram(nucleotide_file, snps, verbose=verbose)
     else:
         rest,found = check_snps_normal(nucleotide_file, snps, threads, verbose=verbose)
+    if snp_file is not None:
+        if len(outfile) != 1:
+            for outfile_single, snp_file_single, rest_file_single in zip(outfile, snp_file, rest_file):
+                with open(outfile_single, "w") as outf:
+                    if rest_file_single is not None:
+                        rest_file_out = open(rest_file_single, "w")
+                    for snp in snps_dict_per_file[snp_file_single]:
+                        if snp in found:
 
-    with open(outfile, "w") as outf:
-        for keys in found.keys():
-            for line in found[keys]:
-                line = "\t".join([str(i) for i in keys]) + "\t" + "\t".join([str(i) for i in line])
-                outf.write(line)
+                            for line in found[snp]:
+                                line = "\t".join([str(i) for i in snp]) + "\t" + "\t".join([str(i) for i in line])
+                                outf.write(line)
+                        else:
+                            if rest_file_single is not None:
+                                rest_file_out.write("\t".join([str(i) for i in snp]) + "\n")
+        else:
+            with open(outfile[0], "w") as outf:
+                for snp_file_single, rest_file_single in zip(snp_file, rest_file):
+                    if rest_file_single is not None:
+                        rest_file_out = open(rest_file_single, "w")
+                    for snp in snps_dict_per_file[snp_file_single]:
 
-    if rest_file is not None:
-        r = open(rest_file, "w")
-        for snp in rest:
-            r.write(snp)
+                        if snp in found:
+                            for line in found[snp]:
+                                line = "\t".join([str(i) for i in snp]) + "\t" + "\t".join([str(i) for i in line])
+                                outf.write(line)
+                        else:
+                            if rest_file_single is not None:
+                                rest_file_out.write("\t".join([str(i) for i in snp]) + "\n")
+                    if rest_file_single is not None:
+                        rest_file_out.close()
 
-    pass
+    else:
+        with open(outfile[0], "w") as outf:
+            for keys in found.keys():
+                for line in found[keys]:
+                    line = "\t".join([str(i) for i in keys]) + "\t" + "\t".join([str(i) for i in line])
+                    outf.write(line)
+        if rest_file[0] is not None:
+            r = open(rest_file[0], "w")
+            for snp in rest:
+                r.write(snp)
+
+
 def check_snps_normal(nucleotide_file, snps=None, threads=1, verbose=False):
 
     snps_found = {}
