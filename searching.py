@@ -32,7 +32,7 @@ def check_snps(nucleotide_file, snp_file=None, snps=None, binary=False, outfile=
             snps.append(snp)
     if rest_file is None:
         rest_file = [None for _ in snp_file]
-    print(snps)
+
     if low_ram:
         if verbose:
             print("Searching in tbg file for SNPs...")

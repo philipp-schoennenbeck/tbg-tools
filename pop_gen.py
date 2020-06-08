@@ -284,9 +284,6 @@ def analyze_vcf_file(nucleotide_file, vcf_file, output, restfile=None, threads=1
 
 if __name__ == "__main__":
     pass
-    # analyze_vcf_file("crip/crip.tbg", ["crip/example_vcf_file.vcf","crip/example_vcf_file.vcf"], ["crip/crip_vcf_results.tsv", "crip/crip_vcf_results2.tsv"],restfile=["crip/crip_vcf_rest.tsv","crip/crip_vcf_rest2.tsv"],threads=4,low_ram=True,stat_file=["stats_test_vcf.tsv","stats_test_vcf2.tsv"])
-    analyze_sync_file("crip/crip.tbg", ["test.sync","test.sync"], ["crip/crip_sync_results.tsv","crip/crip_sync_results2.tsv"],
-                     restfile=["crip/crip_sync_rest.tsv","crip/crip_sync_rest2.tsv"], threads=4, low_ram=True, stat_file=["stats_test_sync.tsv","stats_test_sync2.tsv"])
 
 # pop_gen -n crip/crip.tbg -o crip/crip_results_vcf.tsv -vcf crip/example_vcf_file.vcf crip/example_vcf_file2.vcf -sf crip/crip_stats_vcf.tsv -r crip/crip_vcf_rest.vcf crip/crip_vcf_rest2.vcf -w -t 4 -v
 # pop_gen -n crip/crip.tbg -o crip/crip_results_sync.tsv crip/crip_results_sync2.tsv -s test.sync test2.sync -sf crip/crip_stats_sync.tsv crip/crip_stats_sync2.tsv -r crip/crip_sync_rest.sync crip/crip_sync_rest2.sync -w -t 4 -v

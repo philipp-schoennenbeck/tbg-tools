@@ -266,6 +266,7 @@ def create_the_file(gff_file, fasta_file, outfile_hr=None, outfile_bin="default.
                     outfile.write(line)
             os.remove(filename)
 
+
     if outfile_hr is not None:
         with open(outfile_hr, 'w') as outfile:
             for filename in filenames_hr:
@@ -275,7 +276,8 @@ def create_the_file(gff_file, fasta_file, outfile_hr=None, outfile_bin="default.
                     for line in infile:
                         outfile.write(line)
                 os.remove(filename)
-
+    if verbose:
+        print("Done!")
 # create -g radix_whole.gff -f radix_whole.fa -t 4 -p radix_whole_proteins.fa -v -o radix_whole.tbg -w
 # create -g E_coli.gff -f E_coli.fa -t 4 -p E_coli_proteins.fa -v -o E_coli.tbg -w
 
@@ -318,12 +320,7 @@ def write_human_readable(path_bin, path_hr=None):
                 outf.write(scaffolds[scaffold_and_position[0]] + "\t" + str(scaffold_and_position[1]) + "\t" +
                                "\t".join(rest) + "\n")
 
-    # if snps is not None:
-    #     snps = []
-    #     for i in snps_dic.keys():
-    #         if not snps_dic[i]:
-    #             snps.append(f"{i[0]}\t{i[1]}\n")
-    #     return snps
+
     return None
 
 if __name__ == "__main__":
