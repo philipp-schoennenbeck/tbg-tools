@@ -10,7 +10,7 @@ from datetime import datetime
 if __name__ == "__main__":
     # time = datetime.now()
     description = "This is a program to work with tbg files.\n" \
-                  "tbg files are files to fast and easily find out if specific positions on scaffolds are within a gene" \
+                  "tbg files are files to fast and easily find out if specific positions on scaffolds are within a gene " \
                   "or not and if they are within a gene, you get additional information about this position\n" \
                   "create\tcreate the tbg file with a gff and a fasta file\n" \
                   "search\tsearches in the tbg file for specific SNPs\n" \
@@ -185,11 +185,11 @@ if __name__ == "__main__":
         else:
             args = parser.parse_args()
             if args.version:
-                print("TBG v0.1")
+                print("TBG v0.2")
             else:
                 parser.print_help()
     else:
         parser.print_help()
     # print((datetime.now() - time).total_seconds())
-# create -f E_coli.fa -g E_coli.gff -p E_coli_proteins.fa -o E_coli.tbg -hr E_coli_tbg.tsv -t 4 -v -w -n E_coli_genes.fa
+# c
 # search -n E_coli.tbg -o E_coli_specific_gene_tbg.tsv -v -t 4 -g gene-b3268
