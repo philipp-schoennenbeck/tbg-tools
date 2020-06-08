@@ -3,6 +3,7 @@
 The purpose of this program is to quickly look up positions on scaffolds and get some further informations about these positions.
 It is not in its finished version and there are surely still some bugs to be found. 
 
+python version = 3.6+
 ### Usage:
 
 python3 main_program.py --help
@@ -11,7 +12,7 @@ python3 main_program.py --help
 
 Note: if you do not have a lot of RAM available, use the -w option
 
-More options for each programm can be found with create -h, search -h ...
+More options for each program can be found with python3 main_program.py create -h, python3 main_program.py search -h ...
 
 #### create: this has to be used first to create a tbg file
 e.g. : python3 main_program.py create -g example.gff -f example.fa -o example.tbg -t 4 -w -v -hro example.tsv
