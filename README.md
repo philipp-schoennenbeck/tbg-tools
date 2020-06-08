@@ -1,5 +1,6 @@
-# tbg-tools
+# tbg-tools v0.2
 
+##If you have version 0.1 download v0.2! There is a huge bug still in v0.1!
 The purpose of this program is to quickly look up positions on scaffolds and get some further informations about these positions.
 It is not in its finished version and there are surely still some bugs to be found. 
 
