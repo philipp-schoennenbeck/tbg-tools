@@ -190,6 +190,4 @@ if __name__ == "__main__":
                 parser.print_help()
     else:
         parser.print_help()
-    # print((datetime.now() - time).total_seconds())
-# c
-# search -n E_coli.tbg -o E_coli_specific_gene_tbg.tsv -v -t 4 -g gene-b3268
+

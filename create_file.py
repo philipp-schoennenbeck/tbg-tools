@@ -285,12 +285,6 @@ def create_the_file(gff_file, fasta_file, outfile_hr=None, outfile_bin="default.
                 os.remove(filename)
     if verbose:
         print("Done!")
-# create -g radix_whole.gff -f radix_whole.fa -t 4 -p radix_whole_proteins.fa -v -o radix_whole.tbg -w
-# create -g E_coli.gff -f E_coli.fa -t 4 -p E_coli_proteins.fa -v -o E_coli.tbg -w
-
-
-
-
 
 
 

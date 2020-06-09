@@ -284,6 +284,3 @@ def analyze_vcf_file(nucleotide_file, vcf_file, output, restfile=None, threads=1
 
 if __name__ == "__main__":
     pass
-
-# pop_gen -n crip/crip.tbg -o crip/crip_results_vcf.tsv -vcf crip/example_vcf_file.vcf crip/example_vcf_file2.vcf -sf crip/crip_stats_vcf.tsv -r crip/crip_vcf_rest.vcf crip/crip_vcf_rest2.vcf -w -t 4 -v
-# pop_gen -n crip/crip.tbg -o crip/crip_results_sync.tsv crip/crip_results_sync2.tsv -s test.sync test2.sync -sf crip/crip_stats_sync.tsv crip/crip_stats_sync2.tsv -r crip/crip_sync_rest.sync crip/crip_sync_rest2.sync -w -t 4 -v

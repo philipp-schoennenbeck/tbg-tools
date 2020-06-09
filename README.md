@@ -1,6 +1,6 @@
 # tbg-tools v0.2
 
-##If you have version 0.1 download v0.2! There is a huge bug still in v0.1!
+## If you have version 0.1 download v0.2! There is a huge bug still in v0.1!
 The purpose of this program is to quickly look up positions on scaffolds and get some further informations about these positions.
 It is not in its finished version and there are surely still some bugs to be found. 
 
@@ -38,6 +38,7 @@ scaffold2   100123  100160
 
 If a third column exists the region between the second and the third columns will be searched for.
 The result file is a small portion of the human readable tsv file which only contains the found positions.
+In this example that would be 100123-100159 but not 100160.
 If some positions are not found within a gene, they can be written to a rest file (option -r)
 
 

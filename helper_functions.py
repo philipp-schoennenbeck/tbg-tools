@@ -32,6 +32,11 @@ def get_code(code, aa_codes, three_letter_code = False):
     """Returns the amino acid code out of a string with 3 characters.
     By default the one letter code is returned. If three_letter_code is True, the three letter code will be returned"""
     code = code.upper()
+
+    if len(code) < 3:
+        code += "A"
+    if len(code) < 3:
+        code += "A"
     if "N" in code:
         position = code.index("N")
         try:
