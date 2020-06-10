@@ -17,7 +17,7 @@ def analyze_sync_file(nucleotide_file, sync_file, output, restfile=None, threads
                 line = line.strip()
                 columns = line.split("\t")
 
-                if len(columns) <= 3:
+                if len(columns) <= 3 or columns[2] == "N":
                     continue
 
                 populations = len(columns[3:])
