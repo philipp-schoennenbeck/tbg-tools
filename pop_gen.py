@@ -32,13 +32,13 @@ def analyze_sync_file(nucleotide_file, sync_file, output, restfile=None, threads
             four_ds = {j:[0 for i in range(populations)] for j in sync_file}
             syn_changes = {j:[0 for i in range(populations)] for j in sync_file}
             non_syn_changes = {j:[0 for i in range(populations)] for j in sync_file}
-            ATCG_dict = {"A": 6, "T": 7, "C": 8, "G": 9}
+            ATCG_dict = {"A": 8, "T": 9, "C": 10, "G": 11}
         else:
 
             four_ds = [0 for i in range(populations)]
             syn_changes = [0 for i in range(populations)]
             non_syn_changes = [0 for i in range(populations)]
-            ATCG_dict = {"A": 6, "T": 7, "C": 8, "G": 9}
+            ATCG_dict = {"A": 8, "T": 9, "C": 10, "G": 11}
 
     if verbose:
         print("Loading tbg file!")
@@ -77,6 +77,7 @@ def analyze_sync_file(nucleotide_file, sync_file, output, restfile=None, threads
                     outfile.write("\t".join([str(keys[0]), str(keys[1]), line[5]]))
 
                     pop_counter = 0
+
                     for population in sync_data[sync_f][keys]:
                         amino_acids = []
                         current_pop = population.split(":")
@@ -93,20 +94,22 @@ def analyze_sync_file(nucleotide_file, sync_file, output, restfile=None, threads
                         amino_acids.append(str(current_pop[5]))
                         amino_acids = ":".join(amino_acids)
                         outfile.write("\t" + amino_acids)
+
                         if stat_file is not None:
                             if all([line[9+i] == line[8] for i in range(3)]):
                                 if len(stat_file) > 1:
                                     four_ds[sync_f][pop_counter] += 1
                                 else:
                                     four_ds[pop_counter] += 1
-                            for i in range(4):
-                                if keys[2] != line[2] and line[ATCG_dict[keys[2]]] == line[6+i]:
+                            for i,j in zip(range(4), "ATCG"):
+                                if keys[2] != j and line[ATCG_dict[keys[2]]] == line[8+i]:
 
                                     if len(stat_file) > 1:
                                         syn_changes[sync_f][pop_counter] += current_pop[i]
                                     else:
                                         syn_changes[pop_counter] += current_pop[i]
-                                elif keys[2] != line[2]:
+                                elif keys[2] != j:
+
                                     if len(stat_file) > 1:
                                         non_syn_changes[sync_f][pop_counter] += current_pop[i]
                                     else:
@@ -142,7 +145,7 @@ def analyze_sync_file(nucleotide_file, sync_file, output, restfile=None, threads
 def analyze_vcf_file(nucleotide_file, vcf_file, output, restfile=None, threads=1,low_ram=False, stat_file=None, verbose=False):
     vcf_data = {i:{} for i in vcf_file}
     snps_dict = {}
-    ATCG_dict = {"A": 6, "T": 7, "C": 8, "G": 9}
+    ATCG_dict = {"A": 8, "T": 9, "C": 10, "G": 11}
 
     if verbose:
         print("Loading vcf file!")
