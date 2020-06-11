@@ -74,7 +74,8 @@ def analyze_sync_file(nucleotide_file, sync_file, output, restfile=None, threads
                     scaf_pos = [keys[0], keys[1]]
                     scaf_pos.extend(line)
                     line = scaf_pos
-                    outfile.write("\t".join([str(keys[0]), str(keys[1]), str(keys[2])]))
+                    outfile.write("\t".join([str(keys[0]), str(keys[1]), line[5]]))
+
                     pop_counter = 0
                     for population in sync_data[sync_f][keys]:
                         amino_acids = []
@@ -99,12 +100,13 @@ def analyze_sync_file(nucleotide_file, sync_file, output, restfile=None, threads
                                 else:
                                     four_ds[pop_counter] += 1
                             for i in range(4):
-                                if line[ATCG_dict[keys[2]]] !=i and line[ATCG_dict[keys[2]]] == line[6+i]:
+                                if keys[2] != line[2] and line[ATCG_dict[keys[2]]] == line[6+i]:
+
                                     if len(stat_file) > 1:
                                         syn_changes[sync_f][pop_counter] += current_pop[i]
                                     else:
                                         syn_changes[pop_counter] += current_pop[i]
-                                else:
+                                elif keys[2] != line[2]:
                                     if len(stat_file) > 1:
                                         non_syn_changes[sync_f][pop_counter] += current_pop[i]
                                     else:

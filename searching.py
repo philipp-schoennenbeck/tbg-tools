@@ -201,8 +201,7 @@ def check_gene(tbg_file, genes_to_find, outfile, verbose, rest):
                     print(f"{gene} was not found!")
         if rest:
             rest_file.close()
-        if verbose:
-            print("Writing the result file...")
+
         fmt_size_before_gene = byte_size_of_fmt("IIcccc")
         with open(outfile, "w") as outfile:
             while True:
@@ -260,8 +259,6 @@ def check_scaffold(tbg_file, scaffolds_to_find, outfile, verbose, rest):
                     print(f"{scaffold} was not found!")
         if rest:
             rest_file.close()
-        if verbose:
-            print("Writing the result file...")
         with open(outfile, "w") as outfile:
             while True:
                 line = f.read(byte_size_of_fmt(format_string()))
