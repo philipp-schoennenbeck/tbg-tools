@@ -171,6 +171,7 @@ def check_snps_low_ram(nucleotide_file, snps=None, verbose=False):
 def check_gene(tbg_file, genes_to_find, outfile, verbose, rest):
     if verbose:
         print("Searching for genes!")
+    outfile = outfile[0]
     with open(tbg_file, "rb") as f:
         genes = {}
         genes_found = {}
@@ -228,6 +229,7 @@ def check_gene(tbg_file, genes_to_find, outfile, verbose, rest):
 def check_scaffold(tbg_file, scaffolds_to_find, outfile, verbose, rest):
     if verbose:
         print("Searching for scaffolds!")
+    outfile = outfile[0]
     with open(tbg_file, "rb") as f:
         genes = {}
         scaffolds_found = {}
