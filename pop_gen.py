@@ -145,7 +145,7 @@ def analyze_sync_file(nucleotide_file, sync_file, output, restfile=None, threads
 def analyze_vcf_file(nucleotide_file, vcf_file, output, restfile=None, threads=1,low_ram=False, stat_file=None, verbose=False):
     vcf_data = {i:{} for i in vcf_file}
     snps_dict = {}
-    ATCG_dict = {"A": 8, "T": 9, "C": 10, "G": 11}
+    ATCG_dict = {"A": 6, "T": 7, "C": 8, "G": 9}
 
     if verbose:
         print("Loading vcf file!")
