@@ -1,6 +1,7 @@
 from helper_functions import *
 import searching
 import copy
+import os
 
 def analyze_sync_file(nucleotide_file, sync_file, output, restfile=None, threads=1,low_ram=False, stat_file=None, verbose=False):
     sync_data = {i:{} for i in sync_file}
@@ -9,6 +10,8 @@ def analyze_sync_file(nucleotide_file, sync_file, output, restfile=None, threads
     populations = 0
     if verbose:
         print("Loading sync file!")
+
+
     for sync_f in sync_file:
         with open(sync_f, "r") as sync:
             for line in sync:
@@ -142,19 +145,39 @@ def analyze_sync_file(nucleotide_file, sync_file, output, restfile=None, threads
                     f.write("non_synonymous_changes\t" + "\t".join([str(i) for i in non_syn_changes[sync_f]]) + "\n")
     outfile.close()
 
-def analyze_vcf_file(nucleotide_file, vcf_file, output, restfile=None, threads=1,low_ram=False, stat_file=None, verbose=False):
+def analyze_vcf_file(nucleotide_file, vcf_file, output, restfile=None, threads=1,low_ram=False, stat_file=None, verbose=False, individual_stat_file=False):
     vcf_data = {i:{} for i in vcf_file}
     snps_dict = {}
     ATCG_dict = {"A": 6, "T": 7, "C": 8, "G": 9}
 
+    if individual_stat_file:
+        for file in vcf_file:
+            if "\\" in file:
+                file = file.split("\\")
+            else:
+                file = file.split("/")
+            if not os.path.exists(file[-1] + "_tbg_results"):
+                os.mkdir(file[-1] + "_tbg_results")
+        ind_names = {}
     if verbose:
         print("Loading vcf file!")
+
     for vcf_f in vcf_file:
         with open(vcf_f, "r") as vcf:
             for line in vcf:
-                if line[0] == "#":
+                if line[:2] == "##":
                     continue
-
+                if line[0] == "#" and individual_stat_file is not None:
+                    line = line.strip()
+                    line = line.split()
+                    ind_names[vcf_f] = line[9:]
+                    snps_not_in_gene_ind = {i: [0 for _ in ind_names[vcf_f]] for i in vcf_file}
+                    syn_changes_ind = {i: [0 for _ in ind_names[vcf_f]] for i in vcf_file}
+                    non_syn_changes_ind = {i: [0 for _ in ind_names[vcf_f]] for i in vcf_file}
+                    snps_in_gene_ind = {i: [0 for _ in ind_names[vcf_f]] for i in vcf_file}
+                    not_snps_variants_ind = {i: [0 for _ in ind_names[vcf_f]] for i in vcf_file}
+                    no_information_about_variants = {i: [0 for _ in ind_names[vcf_f]] for i in vcf_file}
+                    continue
                 line = line.strip()
                 columns = line.split("\t")
                 if len(columns) <= 3:
@@ -245,16 +268,50 @@ def analyze_vcf_file(nucleotide_file, vcf_file, output, restfile=None, threads=1
                                         non_syn_changes[vcf_f] += 1
                                     else:
                                         non_syn_changes += 1
-                        alt_aa = ",".join(alt_aa)
-                        outfile.write("\t".join([str(keys[0]),str(keys[1])]) + f"\t{line[4]}\t{ref_aa}\t{alt_aa}\t" + "\t".join(vcf_data[vcf_f][keys]) + "\n")
+                        alt_aa_string = ",".join(alt_aa)
+                        outfile.write("\t".join([str(keys[0]),str(keys[1])]) + f"\t{line[4]}\t{ref_aa}\t{alt_aa_string}\t" + "\t".join(vcf_data[vcf_f][keys]) + "\n")
                     else:
                         if stat_file is not None:
                             if len(stat_file) > 1:
                                 not_snps_variants[vcf_f] += 1
                             else:
                                 not_snps_variants += 1
+                if individual_stat_file:
+                    line = vcf_data[vcf_f][keys]
+                    gt_position = None
+                    formats = line[3].split(":")
+                    for pos, format in enumerate(formats):
+                        if format == "GT":
+                            gt_position = pos
+                            break
+                    if gt_position is None:
+                        continue
+                    for ind_counter, ind in enumerate(line[4:]):
+                        snps_in_gene_ind[vcf_f][ind_counter] += 1
+                        information = ind.split(":")
+                        information[gt_position] = information[gt_position].replace("|", "/")
+                        allels = information[gt_position].split("/")
+                        for allel in allels:
+                            if allel == "." or allel == "*":
+                                no_information_about_variants[vcf_f][ind_counter] += 1
+                                continue
+                            if allel == "0":
+                                syn_changes_ind[vcf_f][ind_counter] += 1
+                                continue
+                            else:
+                                allel = int(allel)
+                                if ref_aa == alt_aa[allel-1]:
+                                    syn_changes_ind[vcf_f][ind_counter] += 1
+                                elif alt_aa[allel-1] == "-":
+                                    not_snps_variants_ind[vcf_f][ind_counter] += 1
+                                else:
+                                    non_syn_changes_ind[vcf_f][ind_counter] += 1
 
             else:
+                if individual_stat_file:
+                    for ind_counter, ind in enumerate(ind_names[vcf_f]):
+                        snps_not_in_gene_ind[vcf_f][ind_counter] += 1
+
                 if stat_file is not None:
                     if len(stat_file) > 1:
                         snps_not_in_gene[vcf_f] += 1
@@ -285,6 +342,21 @@ def analyze_vcf_file(nucleotide_file, vcf_file, output, restfile=None, threads=1
                     f.write("synonymous_changes\t" + str(syn_changes[vcf_f]) + "\n")
                     f.write("non_synonymous_changes\t" + str(non_syn_changes[vcf_f]) + "\n")
 
+    if individual_stat_file:
+        for vcf_f in vcf_file:
+            for ind_counter, name in enumerate(ind_names[vcf_f]):
+                if "\\" in vcf_f:
+                    file = vcf_f.split("\\")
+                else:
+                    file = vcf_f.split("/")
+                with open(file[-1] + "_tbg_results/" + name + "_stats.tsv", "w") as f:
+                    f.write("SNPs found in coding sequences\t" + str(snps_in_gene_ind[vcf_f][ind_counter]) + "\n")
+                    f.write("SNPs not found in coding sequences\t" + str(snps_not_in_gene_ind[vcf_f][ind_counter]) + "\n")
+                    f.write("variants which are not SNPs\t" + str(not_snps_variants_ind[vcf_f][ind_counter]) + "\n")
+                    f.write("synonymous_changes\t" + str(syn_changes_ind[vcf_f][ind_counter]) + "\n")
+                    f.write("non_synonymous_changes\t" + str(non_syn_changes_ind[vcf_f][ind_counter]) + "\n")
+                    f.write("no_information_about_variant\t" + str(no_information_about_variants[vcf_f][ind_counter]) + "\n")
+                    f.write("dN/dS\t" + str(non_syn_changes_ind[vcf_f][ind_counter]/syn_changes_ind[vcf_f][ind_counter]) + "\n")
 
 
 if __name__ == "__main__":

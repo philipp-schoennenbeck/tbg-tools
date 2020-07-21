@@ -17,7 +17,7 @@ if __name__ == "__main__":
                   "search\tsearches in the tbg file for specific SNPs\n" \
                   "convert\tconvert the tbg file to a human readable file"
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("-#", "--version", help="print program version", action="store_true")
+
 
     if len(sys.argv) >= 2:
         if sys.argv[1] == "create":
@@ -139,6 +139,7 @@ if __name__ == "__main__":
             parser.add_argument("-r", "--rest", help="Path to a potential file with not found positions,  multiple files can be seperated by space (number of files has to match number of files in -s or -vcf or just a single one for an combined file)", default=None,nargs="+")
             parser.add_argument("-w", "--low_ram", help="option for systems with low RAM", action="store_true",
                                 default=False)
+            parser.add_argument("-i", "--individual_stats_file", help="creates stats file for each individual in each vcf-file in your current working directory", action="store_true", default=False)
             args = parser.parse_args(sys.argv[2:])
             if not os.path.isfile(args.tbg_file):
                 raise FileNotFoundError(f"tbg file was not found (\"{args.tbg_file}\")")
@@ -182,8 +183,9 @@ if __name__ == "__main__":
                     if not os.path.isfile(file):
                         raise FileNotFoundError(f"vcf file was not found (\"{file}\")")
                 pop_gen.analyze_vcf_file(args.tbg_file, vcf_files, out_files, rest_files, threads=args.threads,
-                                          stat_file=stats_files, low_ram=args.low_ram, verbose=args.verbose)
+                                          stat_file=stats_files, low_ram=args.low_ram, verbose=args.verbose, individual_stat_file=args.individual_stats_file)
         else:
+            parser.add_argument("-#", "--version", help="print program version", action="store_true")
             args = parser.parse_args()
             if args.version:
                 print("TBG v0.2")
