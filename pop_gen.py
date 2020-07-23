@@ -264,7 +264,7 @@ def analyze_vcf_file(nucleotide_file, vcf_file, output, restfile=None, threads=1
                                         non_syn_changes += 1
                         alt_aa_string = ",".join(alt_aa)
 
-                        outfile.write("\t".join([str(keys[0]),str(keys[1])]) + "\t" + line[4] + f"\t{line[4]}\t{ref_aa}\t{alt_aa_string}\t" + "\t".join(vcf_data[vcf_f][keys]) + "\n")
+                        outfile.write("\t".join([str(keys[0]),str(keys[1])])  + f"\t{line[4]}\t{ref_aa}\t{alt_aa_string}\t" + "\t".join(vcf_data[vcf_f][keys]) + "\n")
                     else:
                         if stat_file is not None:
                             if len(stat_file) > 1:
