@@ -441,6 +441,7 @@ def decode_line(line, genes):
 
 
 def create_file_names_and_files(number_of_files, begin=""):
+    """Creates multiple files if they not exists"""
     counter = 0
     filenames = []
     for i in range(number_of_files):

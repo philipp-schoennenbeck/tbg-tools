@@ -188,7 +188,7 @@ if __name__ == "__main__":
             parser.add_argument("-#", "--version", help="print program version", action="store_true")
             args = parser.parse_args()
             if args.version:
-                print("TBG v0.2")
+                print("TBG v1.0")
             else:
                 parser.print_help()
     else:
