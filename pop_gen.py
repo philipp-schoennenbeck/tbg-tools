@@ -175,6 +175,8 @@ def analyze_vcf_file(nucleotide_file, vcf_file, output, restfile=None, threads=1
                     no_information_about_variants = {i: [0 for _ in ind_names[vcf_f]] for i in vcf_file}
                     positions_with_ref_nucl = {i: [0 for _ in ind_names[vcf_f]] for i in vcf_file}
                     continue
+                if line[0] == "#":
+                    continue
                 line = line.strip()
                 columns = line.split("\t")
                 if len(columns) <= 3:
