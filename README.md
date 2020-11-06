@@ -20,7 +20,7 @@ e.g. : python3 main_program.py create -g example.gff -f example.fa -o example.tb
 
 tbg files are binary files and can not be read by other programs but you can also
 create a human readable tsv file which will be much larger.
-The program itself uses the binary tbg files
+The program itself uses the binary tbg files.
 
 
 
@@ -40,6 +40,12 @@ If a third column exists the region between the second and the third columns wil
 The result file is a small portion of the human readable tsv file which only contains the found positions.
 In this example that would be 100123-100159 but not 100160.
 If some positions are not found within a gene, they can be written to a rest file (option -r)
+
+##### Important note:
+
+Bed files start count at 0, gff files at 1. tbg-tools uses the way of the gff file. If you use bed files you have to add 1 to the second and third column. This can be done with a simple *awk* script: 
+
+awk '{$2 = $2 + 1; if ($3!=""){$3 = $3 +1} print}' your_bed_file.bed > new_bed_file.bed
 
 
 #### convert:
