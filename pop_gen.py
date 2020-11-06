@@ -163,7 +163,7 @@ def analyze_vcf_file(nucleotide_file, vcf_file, output, restfile=None, threads=1
             for line in vcf:
                 if line[:2] == "##":
                     continue
-                if line[0] == "#" and individual_stat_file is not None:
+                if line[0] == "#" and individual_stat_file:
                     line = line.strip()
                     line = line.split()
                     ind_names[vcf_f] = line[9:]
